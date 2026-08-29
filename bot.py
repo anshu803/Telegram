@@ -56,7 +56,7 @@ except Exception as e:
     logging.error(f"Commands setup error: {e}")
 
 # ---------------------------------------------------------
-# EXACT KEYBOARD LAYOUT (Matching Screenshot 2)
+# MAIN KEYBOARD LAYOUT
 # ---------------------------------------------------------
 def get_main_keyboard():
     markup = InlineKeyboardMarkup(row_width=1)
@@ -88,16 +88,15 @@ def get_product_buy_keyboard():
     return markup
 
 # ---------------------------------------------------------
-# START FLOW (4 Videos + 1 Photo Media Grid + 2 Texts)
+# START SEQUENCE (4 VIDEOS + 1 PHOTO)
 # ---------------------------------------------------------
 def send_start_sequence(chat_id, user_name):
-    # 4 Videos + 1 Photo Media Array
     start_media_files = [
-        "videos/video1.mp4",  # Video 1
-        "videos/photo1.jpg",  # Photo 1 (Middle)
-        "videos/video2.mp4",  # Video 2
-        "videos/video3.mp4",  # Video 3
-        "videos/video4.mp4"   # Video 4
+        "videos/video1.mp4",
+        "videos/photo1.jpg",  # Middle Photo
+        "videos/video2.mp4",
+        "videos/video3.mp4",
+        "videos/video4.mp4"
     ]
     
     album = []
@@ -108,18 +107,18 @@ def send_start_sequence(chat_id, user_name):
             elif path.endswith(('.jpg', '.jpeg', '.png')):
                 album.append(InputMediaPhoto(open(path, 'rb')))
 
-    # Step 1: Send Media Grid
+    # Step 1: Send Media Group
     if len(album) > 0:
         try:
             bot.send_media_group(chat_id, album)
         except Exception as e:
             logging.error(f"Start Media Album Error: {e}")
-            
-    # Step 2: Send Text Message
+
+    # Step 2: Quality Notice Text
     text_msg = "✨ **TRY OUR ANY PLAN FOR CHECKING THE QUALITY** ✨"
     bot.send_message(chat_id, text_msg)
     
-    # Step 3: Send Welcome Message with Main Buttons
+    # Step 3: Welcome Message with Buttons
     welcome_msg = f"👋 Hello, 🦋💸**{user_name}**!\n\nChoose a plan to get started:"
     bot.send_message(chat_id, welcome_msg, reply_markup=get_main_keyboard())
 
@@ -174,7 +173,7 @@ def send_section_content(chat_id, plan_title, price, validity, desc, media_files
         bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
-# BOT HANDLERS
+# HANDLERS & EXACT SECTION MAPPING
 # ---------------------------------------------------------
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
@@ -207,51 +206,52 @@ def callback_handler(call):
     data = call.data
     bot.answer_callback_query(call.id)
 
+    # EXACT MEDIA MAPPING ACCORDING TO YOUR INSTRUCTIONS:
     sections = {
-        "p1": {
+        "p1": { # ₹69 -> 2 Videos
             "name": "PLAN 1 PACK", "price": "69", "validity": "30 Days",
             "desc": "PERMANENT VVIP GROUP ACCESS",
             "media": ["videos/video1.mp4", "videos/video2.mp4"] 
         },
-        "p2": {
+        "p2": { # ₹79 -> 1 Video + 1 Photo
             "name": "PLAN 2 PACK", "price": "79", "validity": "30 Days",
             "desc": "HOT DESI VVIP PACK",
-            "media": ["videos/photo1.jpg", "videos/video2.mp4"]
+            "media": ["videos/video3.mp4", "videos/photo1.jpg"]
         },
-        "p3": {
+        "p3": { # ₹96 -> 3 Videos
             "name": "PLAN 3 PACK", "price": "96", "validity": "30 Days",
             "desc": "PREMIUM EXCLUSIVE ACCESS",
-            "media": ["videos/video1.mp4", "videos/video2.mp4", "videos/video3.mp4"]
+            "media": ["videos/video4.mp4", "videos/video5.mp4", "videos/video6.mp4"]
         },
-        "p4": {
+        "p4": { # ₹155 -> 2 Videos + 1 Photo
             "name": "OFFER PACK ✨", "price": "155", "validity": "30 Days",
             "desc": "SPECIAL DISCOUNT OFFER WITH FULL MEDIA",
-            "media": ["videos/video4.mp4", "videos/video1.mp4", "videos/video2.mp4"]
+            "media": ["videos/video7.mp4", "videos/video8.mp4", "videos/photo2.jpg"]
         },
-        "p5": {
+        "p5": { # ₹89 -> 2 Photos + 1 Video
             "name": "BEST OFFER 🥳", "price": "89", "validity": "365 Days",
             "desc": "1 YEAR UNLIMITED VIP ACCESS",
-            "media": ["videos/video5.mp4", "videos/video1.mp4", "videos/video3.mp4"]
+            "media": ["videos/photo1.jpg", "videos/photo2.jpg", "videos/video9.mp4"]
         },
-        "p6": {
+        "p6": { # ₹111 -> 2 Videos + 1 Photo
             "name": "PLAN 6 PACK", "price": "111", "validity": "60 Days",
             "desc": "60 DAYS FULL VVIP PACK",
-            "media": ["videos/photo2.jpg", "videos/video6.mp4", "videos/video2.mp4"]
+            "media": ["videos/video1.mp4", "videos/video2.mp4", "videos/photo1.jpg"]
         },
-        "p7": {
+        "p7": { # ₹129 -> 3 Videos
             "name": "PLAN 7 PACK", "price": "129", "validity": "60 Days",
             "desc": "INFLUENCER 50% OFF PACK",
-            "media": ["videos/video7.mp4", "videos/video1.mp4", "videos/video3.mp4"]
+            "media": ["videos/video3.mp4", "videos/video4.mp4", "videos/video5.mp4"]
         },
-        "p8": {
+        "p8": { # ₹88 -> 3 Videos
             "name": "PAID PACK", "price": "88", "validity": "30 Days",
             "desc": "BAAP BETI VVIP SPECIAL PACK",
-            "media": ["videos/video8.mp4", "videos/video2.mp4", "videos/video3.mp4"]
+            "media": ["videos/video6.mp4", "videos/video7.mp4", "videos/video8.mp4"]
         },
-        "p10": {
+        "p10": { # ₹277 -> 3 Photos
             "name": "VVIP PLAN 1 LAKH VIDEO", "price": "277", "validity": "365 Days",
             "desc": "PERMANENT VVIP GROUP YOU WILL GET 10 GROUP LINKS ALL VIRAL AND PREMIUM GROUP WORTH IT JUST BUY 🥵💦",
-            "media": ["videos/video1.mp4", "videos/video2.mp4", "videos/video3.mp4"]
+            "media": ["videos/photo1.jpg", "videos/photo2.jpg", "videos/photo3.jpg"]
         }
     }
 
