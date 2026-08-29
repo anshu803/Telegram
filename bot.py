@@ -45,7 +45,6 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-Xj
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "kushal_owner")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 
-# [EDIT HERE: Apni UPI ID aur Name]
 MY_UPI_ID = os.environ.get("MY_UPI_ID", "kushal@upi")
 MY_UPI_NAME = os.environ.get("MY_UPI_NAME", "Viral MMS Store")
 
@@ -102,7 +101,6 @@ def get_payment_action_keyboard(txn_id):
     )
     return markup
 
-# Admin Direct Verification Buttons
 def get_admin_approval_keyboard(user_id, txn_id):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
@@ -143,25 +141,24 @@ def send_start_sequence(chat_id, user_name):
         except Exception as e:
             logging.error(f"Start Media Group Error: {e}")
 
-    # Quality Text Message
     quality_text = "✨ **TRY OUR ANY PLAN FOR CHECKING THE QUALITY** ✨"
     bot.send_message(chat_id, quality_text)
     
-    # Welcome Message
     welcome_msg = f"👋 Hello, 🦋💸**{user_name}**!\n\nChoose a plan to get started:"
     bot.send_message(chat_id, welcome_msg, reply_markup=get_main_keyboard())
 
 # ---------------------------------------------------------
-# DYNAMIC SECTION PREVIEW SENDER (CUSTOM TEXT FORMAT)
+# DYNAMIC SECTION PREVIEW SENDER
 # ---------------------------------------------------------
 def send_section_content(chat_id, plan_id, plan_title, price, validity, desc, media_files):
     
-    # [CUSTOM FORMATTED TEXT]
     caption_text = (
         f"{desc}\n\n"
-        f"🫦Buy now to get access🫦\n\n"
+        f"━━━━━━━━━━━━━━━━━━━\n"
         f"📦 **{plan_title}**\n"
-        f"💰 Price: ₹{price} | ⏳ {validity}"
+        f"💎 **Price:** `₹{price}` | ⏱️ **Validity:** `{validity}`\n"
+        f"━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👉 *Tap 'Buy Now' below to complete payment & unlock instant access!*"
     )
 
     valid_media = []
@@ -211,7 +208,6 @@ def send_payment_qr(chat_id, plan_info):
     amount = plan_info["price"]
     validity = plan_info["validity"]
 
-    # Save details for verification tracking
     pending_verifications[txn_id] = {
         "user_id": chat_id,
         "plan": plan_name,
@@ -219,7 +215,6 @@ def send_payment_qr(chat_id, plan_info):
         "validity": validity
     }
 
-    # Generate UPI QR Code API URL
     encoded_name = urllib.parse.quote(MY_UPI_NAME)
     upi_url = f"upi://pay?pa={MY_UPI_ID}&pn={encoded_name}&am={amount}&cu=INR"
     qr_code_api = f"https://api.qrserver.com/v1/create-qr-code/?size=400x400&data={urllib.parse.quote(upi_url)}"
@@ -250,75 +245,115 @@ def send_payment_qr(chat_id, plan_info):
         )
 
 # ---------------------------------------------------------
-# ALL SECTIONS CONFIGURATION (WITH YOUR CUSTOM DESCRIPTIONS)
+# UNIQUE & REDESIGNED PLAN DETAILS
 # ---------------------------------------------------------
 sections = {
     "p1": {
         "name": "💦 𝐑𝐞𝐚𝐥 𝐈𝐧𝐝!𝐚𝐧 𝐃ē𝐬𝐢 𝐏𝟎𝐫𝐧 🫦", 
         "price": "69", 
         "validity": "30 Days",
-        "desc": "💦 Full Desi Indian content approx 40000+ videos💦",
+        "desc": (
+            "🔥 **ULTIMATE DESI COLLECTION** 🔥\n\n"
+            "✨ *40,000+ Full HD Indian Videos*\n"
+            "⚡ *Daily New Viral Releases*\n"
+            "🔒 *Instant Private Group Access*"
+        ),
         "media": ["videos/video1.mp4", "videos/video2.mp4"] 
     },
     "p2": {
-        "name": "🌽 PLAN 2", 
+        "name": "🌽 𝐇𝐎𝐓 𝐃𝐄𝐒𝐈 𝐕𝐈𝐏 𝐏𝐀𝐂𝐊 🌽", 
         "price": "79", 
         "validity": "30 Days",
-        "desc": "💦 Full Desi Indian content approx 50000+ videos💦",
+        "desc": (
+            "⚡ **SPECIAL PREMIUM STARTER** ⚡\n\n"
+            "🎯 *50,000+ Trending Videos*\n"
+            "🎬 *High Speed Cloud Server Streaming*\n"
+            "✨ *Exclusive Leaked Collection*"
+        ),
         "media": ["videos/video3.mp4", "videos/photo2.jpg"]
     },
     "p3": {
-        "name": "✨ PLAN 3", 
+        "name": "✨ 𝐏𝐑𝐄𝐌𝐈𝐔𝐌 𝐄𝐗𝐂𝐋𝐔𝐒𝐈𝐕𝐄 𝐕𝐈𝐏 ✨", 
         "price": "96", 
         "validity": "30 Days",
-        "desc": "✨10000+ 𝐌0𝐦&𝐒0𝐧 Videos
-✨ 6000+ 𝐑@𝐩€ Videos
-✨ New Content upload Regularly
-
-📦 ✨ G0RE R@PE ✨
-💰 Price: ₹96 | ⏳ 30 Days",
+        "desc": (
+            "👑 **ROYAL ACCESS PASS** 👑\n\n"
+            "🌟 *100,000+ Ultra HD Media Files*\n"
+            "🚀 *Uncensored Daily Stream*\n"
+            "🛡️ *Permanent Access Backup Links*"
+        ),
         "media": ["videos/video4.mp4", "videos/video5.mp4", "videos/video6.mp4"]
     },
     "p4": {
-        "name": "✨ OFFER PACK ✨", 
+        "name": "🎁 𝐒𝐏𝐄𝐂𝐈𝐀𝐋 𝐃𝐈𝐒𝐂𝐎𝐔𝐍𝐓 𝐎𝐅𝐅𝐄𝐑 🎁", 
         "price": "155", 
         "validity": "30 Days",
-        "desc": "SPECIAL DISCOUNT OFFER WITH FULL MEDIA ACCESS",
+        "desc": (
+            "💥 **MEGA DISCOUNT COMBO** 💥\n\n"
+            "🎉 *All 5 VIP Channels Access*\n"
+            "💎 *Full Vault Unlock (Archive Content)*\n"
+            "⚡ *Zero Compression Original Quality*"
+        ),
         "media": ["videos/video7.mp4", "videos/video8.mp4", "videos/photo3.jpg"]
     },
     "p5": {
-        "name": "😋 BEST OFFER 🥳", 
+        "name": "🥳 𝟏-𝐘𝐄𝐀𝐑 𝐔𝐍𝐋𝐈𝐌𝐈𝐓𝐄𝐃 𝐏𝐀𝐒𝐒 🥳", 
         "price": "89", 
         "validity": "365 Days",
-        "desc": "1 YEAR UNLIMITED VVIP CONTENT ACCESS",
+        "desc": (
+            "🌟 **BEST VALUE YEARLY SAVER** 🌟\n\n"
+            "⏳ *365 Days Full Unlimited Streaming*\n"
+            "🔓 *No Monthly Renewal Needed*\n"
+            "🚀 *VIP Fast Track Server Access*"
+        ),
         "media": ["videos/photo4.jpg", "videos/photo5.jpg", "videos/video1.mp4"]
     },
     "p6": {
-        "name": "🥵 PLAN 6 🥵", 
+        "name": "🥵 𝟔𝟎 𝐃𝐀𝐘𝐒 𝐌𝐄𝐆𝐀 𝐕𝐈𝐏 🥵", 
         "price": "111", 
         "validity": "60 Days",
-        "desc": "60 DAYS FULL VVIP DESI PACK",
+        "desc": (
+            "🔥 **DOUBLE MONTH SUPER PACK** 🔥\n\n"
+            "📍 *2 Months Non-Stop Premium Updates*\n"
+            "🍿 *Exclusive Short Clips & Full Movies*\n"
+            "⚡ *Instant Auto-Approval Access*"
+        ),
         "media": ["videos/video2.mp4", "videos/video3.mp4", "videos/photo6.jpg"]
     },
     "p7": {
-        "name": "😳 INFLUENCER 50%-OFF 🥵", 
+        "name": "😳 𝐈𝐍𝐅𝐋𝐔𝐄𝐍𝐂𝐄𝐑 𝟓𝟎% 𝐎𝐅𝐅 🥵", 
         "price": "129", 
         "validity": "60 Days",
-        "desc": "INFLUENCER 50% OFF EXCLUSIVE PACK",
+        "desc": (
+            "⭐ **INFLUENCER SPECIAL VAULT** ⭐\n\n"
+            "📈 *Top Rated Viral Videos Collection*\n"
+            "🎯 *50% Limited Time Offer*\n"
+            "💎 *Direct Private Channel Invitation*"
+        ),
         "media": ["videos/video4.mp4", "videos/video5.mp4", "videos/video6.mp4"]
     },
     "p8": {
-        "name": "🔞 PAID PACK 🥵", 
+        "name": "🔞 𝐏𝐀𝐈𝐃 𝐕𝐈𝐏 𝐒𝐏𝐄𝐂𝐈𝐀𝐋 🔞", 
         "price": "88", 
         "validity": "30 Days",
-        "desc": "SPECIAL VIRAL CONTENT PACK",
+        "desc": (
+            "⚡ **TOP SECRET ACCESS PACK** ⚡\n\n"
+            "🔮 *Rare Unreleased Videos*\n"
+            "🔒 *Private Server High Speed Streaming*\n"
+            "💫 *Lifetime Chat Support Included*"
+        ),
         "media": ["videos/video7.mp4", "videos/video8.mp4", "videos/video1.mp4"]
     },
     "p10": {
-        "name": "😍 VIP VIDEO 🔴", 
+        "name": "🔴 𝟏𝟎-𝐆𝐑𝐎𝐔𝐏 𝐌𝐄𝐆𝐀 𝐁𝐔𝐍𝐃𝐋𝐄 🔴", 
         "price": "277", 
         "validity": "365 Days",
-        "desc": "PERMANENT VVIP GROUP YOU WILL GET 10 GROUP LINKS ALL VIRAL AND PREMIUM GROUP 🥵💦",
+        "desc": (
+            "👑 **THE ULTIMATE VIP MASTER PASS** 👑\n\n"
+            "🚀 *Get Links To 10 All-in-One Premium Groups*\n"
+            "💎 *Lifetime Permanent Membership*\n"
+            "🎉 *All Viral, Exclusive & Original Media*"
+        ),
         "media": ["videos/photo5.jpg", "videos/photo6.jpg", "videos/photo7.jpg"]
     }
 }
@@ -357,7 +392,6 @@ def callback_handler(call):
     data = call.data
     bot.answer_callback_query(call.id)
 
-    # 1. Direct Plan Preview Selection
     if data in sections:
         sec = sections[data]
         send_section_content(
@@ -370,13 +404,11 @@ def callback_handler(call):
             sec["media"]
         )
 
-    # 2. Trigger Payment Screen
     elif data.startswith("buy_"):
         plan_id = data.split("_")[1]
         if plan_id in sections:
             send_payment_qr(chat_id, sections[plan_id])
 
-    # 3. User Clicks "Check Payment Status"
     elif data.startswith("chkpay_"):
         txn_id = data.split("_")[1]
         user_id = call.from_user.id
@@ -385,7 +417,6 @@ def callback_handler(call):
         
         info = pending_verifications.get(txn_id, {"plan": "VVIP Plan", "amount": "N/A"})
 
-        # Send Verification Request to Admin WITH Action Buttons
         admin_alert = (
             f"🚨 **NEW PAYMENT VERIFICATION REQUEST!**\n\n"
             f"👤 **User:** {user_name} ({username})\n"
@@ -404,14 +435,12 @@ def callback_handler(call):
         except Exception as e:
             logging.error(f"Admin Alert Error: {e}")
 
-        # Respond to User
         bot.send_message(
             chat_id, 
             "⏳ **Checking Payment Status...**\n\nAapki payment details Admin ko verify karne ke liye bhej di gayi hai. Direct approve hote hi aapko link mil jayega!",
             reply_markup=get_product_buy_keyboard("p1")
         )
 
-    # 4. ADMIN APPROVES PAYMENT (Verify Payment Button)
     elif data.startswith("adm_approve_"):
         if call.from_user.id != ADMIN_ID:
             bot.send_message(chat_id, "⚠️ Only Admin can use these buttons!")
@@ -424,7 +453,6 @@ def callback_handler(call):
         msg = bot.send_message(ADMIN_ID, f"✅ Enter Private VIP Link/Access for User ID `{target_user_id}` (Txn: {txn_id}):")
         bot.register_next_step_handler(msg, process_admin_vip_link, target_user_id, txn_id, call.message.message_id)
 
-    # 5. ADMIN REJECTS PAYMENT (Cancel Payment Button)
     elif data.startswith("adm_reject_"):
         if call.from_user.id != ADMIN_ID:
             bot.send_message(chat_id, "⚠️ Only Admin can use these buttons!")
@@ -434,13 +462,11 @@ def callback_handler(call):
         target_user_id = int(parts[2])
         txn_id = parts[3]
 
-        # Send Rejection Notice to User
         try:
             bot.send_message(
                 target_user_id, 
                 f"❌ **Payment Status: REJECTED / FAILED**\n\nAapki payment ID (`{txn_id}`) verify nahi ho payi. Agar aapne payment kar di hai to Screenshot ke sath Admin se contact karein: @{ADMIN_USERNAME}"
             )
-            # Update Admin Message
             bot.edit_message_text(
                 f"❌ **Payment Rejected/Cancelled for User ID `{target_user_id}` (Txn: {txn_id})**", 
                 ADMIN_ID, 
@@ -462,7 +488,6 @@ def callback_handler(call):
         user_name = call.from_user.first_name
         send_start_sequence(chat_id, user_name)
 
-# Admin Link Handler
 def process_admin_vip_link(message, target_user_id, txn_id, admin_msg_id):
     vip_link = message.text.strip()
     
@@ -474,11 +499,9 @@ def process_admin_vip_link(message, target_user_id, txn_id, admin_msg_id):
     )
 
     try:
-        # Deliver to User
         bot.send_message(target_user_id, success_msg)
         bot.send_message(ADMIN_ID, f"✅ **VIP Access Link successfully sent to User ID `{target_user_id}`!**")
         
-        # Update Admin Panel Status
         bot.edit_message_text(
             f"✅ **Payment Verified & Link Sent for User ID `{target_user_id}` (Txn: {txn_id})**", 
             ADMIN_ID, 
@@ -522,6 +545,3 @@ if __name__ == '__main__':
     while True:
         try:
             bot.polling(non_stop=True, interval=0, timeout=20)
-        except Exception as e:
-            logging.error(f"Polling crash prevented: {e}")
-            time.sleep(3)
