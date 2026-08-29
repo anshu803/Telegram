@@ -36,14 +36,14 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-Xj
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "kushal_owner")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 
-# Media Files Path / File IDs (Aap yahan direct URL, File ID ya local file path de sakte hain)
-START_PHOTO = os.environ.get("START_PHOTO", "https://picsum.photos/800/400") # Direct URL / Local Path / File ID
-START_VIDEO = os.environ.get("START_VIDEO", "") # Telegram Video File_ID ya local video path (Optional)
+# Media Settings (URL ya File Path)
+START_PHOTO = os.environ.get("START_PHOTO", "https://picsum.photos/800/400")
+START_VIDEO = os.environ.get("START_VIDEO", "") 
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 users_list = set()
 
-# Side-Menu Bar Commands Setup
+# Commands Setup
 try:
     bot.set_my_commands([
         BotCommand("start", "Start Bot Menu"),
@@ -53,7 +53,7 @@ except Exception as e:
     print(f"Commands set error: {e}")
 
 # ---------------------------------------------------------
-# KEYBOARD LAYOUTS
+# KEYBOARDS
 # ---------------------------------------------------------
 def get_main_keyboard():
     markup = InlineKeyboardMarkup()
@@ -68,7 +68,6 @@ def get_main_keyboard():
     markup.add(InlineKeyboardButton("PAID PACK — ₹88 / 30d", callback_data="p8"))
     markup.add(InlineKeyboardButton("VIP VIDEO — ₹277 / 365d", callback_data="p9"))
     
-    # Bottom Row: 'How to Use' + Direct Bot Complaint Button
     btn_how = InlineKeyboardButton("📖 How to Use", callback_data="how_to_use")
     btn_report = InlineKeyboardButton("🚨 Report Issue", callback_data="report_issue")
     markup.row(btn_how, btn_report)
@@ -83,7 +82,7 @@ def get_back_keyboard():
     return markup
 
 # ---------------------------------------------------------
-# SAFE MEDIA SENDER HELPER
+# MEDIA HELPER
 # ---------------------------------------------------------
 def send_welcome_media_and_text(chat_id, user_name):
     welcome_text = (
@@ -91,46 +90,40 @@ def send_welcome_media_and_text(chat_id, user_name):
         f"Choose a plan to get started:"
     )
 
-    # 1. Send Photo (Agar Available ho)
+    # 1. Send Photo
     if START_PHOTO:
         try:
             bot.send_photo(chat_id, START_PHOTO)
         except Exception as e:
-            print(f"Photo send error: {e}")
+            print(f"Photo Error: {e}")
 
-    # 2. Send Video (Agar Available ho)
+    # 2. Send Video
     if START_VIDEO:
         try:
             bot.send_video(chat_id, START_VIDEO)
         except Exception as e:
-            print(f"Video send error: {e}")
+            print(f"Video Error: {e}")
 
-    # 3. Send Text + Main Buttons Menu
-    bot.send_message(
-        chat_id, 
-        welcome_text, 
-        reply_markup=get_main_keyboard()
-    )
+    # 3. Send Text & Buttons
+    bot.send_message(chat_id, welcome_text, reply_markup=get_main_keyboard())
 
 # ---------------------------------------------------------
-# BOT HANDLERS
+# HANDLERS
 # ---------------------------------------------------------
 
-# /start Command Handler
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
     users_list.add(message.chat.id)
     user_name = message.from_user.first_name
     send_welcome_media_and_text(message.chat.id, user_name)
 
-# /broadcast Command Handler (Admin Only)
 @bot.message_handler(commands=['broadcast'])
 def broadcast_cmd(message):
     if message.from_user.id != ADMIN_ID:
         bot.reply_to(message, "⚠️ Aap Admin nahi hain!")
         return
 
-    msg = bot.reply_to(message, "📢 Broadcast ke liye text/media reply karein:")
+    msg = bot.reply_to(message, "📢 Broadcast ke liye message reply karein:")
     bot.register_next_step_handler(msg, process_broadcast)
 
 def process_broadcast(message):
@@ -143,7 +136,6 @@ def process_broadcast(message):
             pass
     bot.send_message(message.chat.id, f"✅ Broadcast successfully {count} users ko bhej diya gaya!")
 
-# Callback Buttons Handling
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
@@ -174,13 +166,11 @@ def callback_handler(call):
         user_name = call.from_user.first_name
         send_welcome_media_and_text(chat_id, user_name)
 
-# Direct Complaint Forwarder to Admin
 def process_user_complaint(message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
     username = f"@{message.from_user.username}" if message.from_user.username else "No Username"
 
-    # Admin Alert Notification
     admin_notification = (
         f"🚨 **NEW USER COMPLAINT RECEIVED!**\n\n"
         f"👤 **User:** {user_name} ({username})\n"
@@ -189,22 +179,22 @@ def process_user_complaint(message):
     )
     
     try:
-        # Step 1: Send Notification Header to Admin
         bot.send_message(ADMIN_ID, admin_notification)
-        
-        # Step 2: Forward User's Exact Message/Media to Admin
         bot.copy_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id)
-        
-        # Step 3: Send Confirmation to User
         bot.send_message(message.chat.id, "✅ **Aapki complaint Admin ko bhej di gayi hai!**\nJald hi aapko response mil jayega.", reply_markup=get_back_keyboard())
     except Exception as e:
         print(f"Complaint Error: {e}")
         bot.send_message(message.chat.id, "⚠️ Complaint bhejne mein error aaya. Kripya Admin se direct chat karein.", reply_markup=get_back_keyboard())
 
 # ---------------------------------------------------------
-# BOT STARTUP (Prevent Multi-Instance Collision)
+# SAFE POLLING (CRASH FIX)
 # ---------------------------------------------------------
 if __name__ == '__main__':
     keep_alive()
-    bot.remove_webhook()
-    bot.infinity_polling(timeout=10, long_polling_timeout=5, skip_pending=True)
+    try:
+        bot.remove_webhook()
+    except Exception:
+        pass
+    
+    # Simple and safe infinity polling
+    bot.infinity_polling(timeout=20, long_polling_timeout=10)
