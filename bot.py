@@ -36,14 +36,10 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-Xj
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "kushal_owner")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 
-# Media Settings (URL ya File Path)
-START_PHOTO = os.environ.get("START_PHOTO", "https://picsum.photos/800/400")
-START_VIDEO = os.environ.get("START_VIDEO", "") 
-
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 users_list = set()
 
-# Commands Setup
+# Side-Menu Bar Commands Setup
 try:
     bot.set_my_commands([
         BotCommand("start", "Start Bot Menu"),
@@ -53,7 +49,7 @@ except Exception as e:
     print(f"Commands set error: {e}")
 
 # ---------------------------------------------------------
-# KEYBOARDS
+# KEYBOARD LAYOUTS
 # ---------------------------------------------------------
 def get_main_keyboard():
     markup = InlineKeyboardMarkup()
@@ -82,40 +78,38 @@ def get_back_keyboard():
     return markup
 
 # ---------------------------------------------------------
-# MEDIA HELPER
+# MEDIA SENDER HELPER FUNCTION
 # ---------------------------------------------------------
-def send_welcome_media_and_text(chat_id, user_name):
-    welcome_text = (
-        f"👋 Hello, {user_name}!\n\n"
-        f"Choose a plan to get started:"
-    )
-
-    # 1. Send Photo
-    if START_PHOTO:
+def send_media_or_text(chat_id, text, file_path, reply_markup):
+    """Local file upload karta hai agar file folder me maujood ho"""
+    if os.path.exists(file_path):
         try:
-            bot.send_photo(chat_id, START_PHOTO)
+            if file_path.endswith(('.mp4', '.mkv', '.mov')):
+                with open(file_path, 'rb') as video:
+                    bot.send_video(chat_id, video, caption=text, reply_markup=reply_markup)
+                return
+            elif file_path.endswith(('.jpg', '.jpeg', '.png')):
+                with open(file_path, 'rb') as photo:
+                    bot.send_photo(chat_id, photo, caption=text, reply_markup=reply_markup)
+                return
         except Exception as e:
-            print(f"Photo Error: {e}")
-
-    # 2. Send Video
-    if START_VIDEO:
-        try:
-            bot.send_video(chat_id, START_VIDEO)
-        except Exception as e:
-            print(f"Video Error: {e}")
-
-    # 3. Send Text & Buttons
-    bot.send_message(chat_id, welcome_text, reply_markup=get_main_keyboard())
+            print(f"Error sending file {file_path}: {e}")
+            
+    # Agar file nahi milti ya fail hoti hai to simple message bhejega
+    bot.send_message(chat_id, text, reply_markup=reply_markup)
 
 # ---------------------------------------------------------
-# HANDLERS
+# BOT HANDLERS
 # ---------------------------------------------------------
 
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
     users_list.add(message.chat.id)
     user_name = message.from_user.first_name
-    send_welcome_media_and_text(message.chat.id, user_name)
+    welcome_text = f"👋 Hello, {user_name}!\n\nChoose a plan to get started:"
+    
+    # Start hone par videos/video1.mp4 bhejega
+    send_media_or_text(message.chat.id, welcome_text, "videos/video1.mp4", get_main_keyboard())
 
 @bot.message_handler(commands=['broadcast'])
 def broadcast_cmd(message):
@@ -123,7 +117,7 @@ def broadcast_cmd(message):
         bot.reply_to(message, "⚠️ Aap Admin nahi hain!")
         return
 
-    msg = bot.reply_to(message, "📢 Broadcast ke liye message reply karein:")
+    msg = bot.reply_to(message, "📢 Broadcast ke liye text/media reply karein:")
     bot.register_next_step_handler(msg, process_broadcast)
 
 def process_broadcast(message):
@@ -142,21 +136,23 @@ def callback_handler(call):
     data = call.data
     bot.answer_callback_query(call.id)
 
-    plans_info = {
-        "p1": "💎 **PLAN 1 Details**\n\nPrice: ₹69\nValidity: 30 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p2": "💎 **PLAN 2 Details**\n\nPrice: ₹79\nValidity: 30 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p3": "💎 **PLAN 3 Details**\n\nPrice: ₹96\nValidity: 30 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p4": "✨ **OFFER PLAN Details**\n\nPrice: ₹155\nValidity: 30 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p5": "🥳 **BEST OFFER PLAN Details**\n\nPrice: ₹89\nValidity: 365 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p6": "💎 **PLAN 6 Details**\n\nPrice: ₹111\nValidity: 60 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p7": "💎 **PLAN 7 Details**\n\nPrice: ₹129\nValidity: 60 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p8": "💎 **PAID PACK Details**\n\nPrice: ₹88\nValidity: 30 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "p9": "💎 **VIP VIDEO PACK Details**\n\nPrice: ₹277\nValidity: 365 Days\n\nIs plan ko buy karne ke liye Admin button par click karein.",
-        "how_to_use": "📖 **How to Use Guide**\n\n1. Plan choose karein.\n2. Access lene ke liye Admin contact karein ya Issue Report karein."
+    # Plans Details mapped with respective repo files (videos/ & photos/)
+    plans_config = {
+        "p1": {"text": "💎 **PLAN 1 Details**\n\nPrice: ₹69\nValidity: 30 Days", "file": "videos/video2.mp4"},
+        "p2": {"text": "💎 **PLAN 2 Details**\n\nPrice: ₹79\nValidity: 30 Days", "file": "videos/video3.mp4"},
+        "p3": {"text": "💎 **PLAN 3 Details**\n\nPrice: ₹96\nValidity: 30 Days", "file": "videos/video4.mp4"},
+        "p4": {"text": "✨ **OFFER PLAN Details**\n\nPrice: ₹155\nValidity: 30 Days", "file": "videos/video5.mp4"},
+        "p5": {"text": "🥳 **BEST OFFER PLAN Details**\n\nPrice: ₹89\nValidity: 365 Days", "file": "videos/video6.mp4"},
+        "p6": {"text": "💎 **PLAN 6 Details**\n\nPrice: ₹111\nValidity: 60 Days", "file": "videos/photo1.jpg"},
+        "p7": {"text": "💎 **PLAN 7 Details**\n\nPrice: ₹129\nValidity: 60 Days", "file": "videos/photo2.jpg"},
+        "p8": {"text": "💎 **PAID PACK Details**\n\nPrice: ₹88\nValidity: 30 Days", "file": "videos/photo3.jpg"},
+        "p9": {"text": "💎 **VIP VIDEO PACK Details**\n\nPrice: ₹277\nValidity: 365 Days", "file": "videos/photo4.jpg"},
+        "how_to_use": {"text": "📖 **How to Use Guide**\n\n1. Plan choose karein.\n2. Access lene ke liye Admin contact karein ya Issue Report karein.", "file": "videos/photo5.jpg"}
     }
 
-    if data in plans_info:
-        bot.send_message(chat_id, plans_info[data], reply_markup=get_back_keyboard())
+    if data in plans_config:
+        info = plans_config[data]
+        send_media_or_text(chat_id, info["text"], info["file"], get_back_keyboard())
 
     elif data == "report_issue":
         msg = bot.send_message(chat_id, "📝 **Apni complaint / issue yahan type karke bhejien:**\n\n(Aap photo, video ya text bhej sakte hain)")
@@ -164,7 +160,8 @@ def callback_handler(call):
 
     elif data == "back":
         user_name = call.from_user.first_name
-        send_welcome_media_and_text(chat_id, user_name)
+        welcome_text = f"👋 Hello, {user_name}!\n\nChoose a plan to get started:"
+        send_media_or_text(chat_id, welcome_text, "videos/video1.mp4", get_main_keyboard())
 
 def process_user_complaint(message):
     user_id = message.from_user.id
@@ -179,22 +176,20 @@ def process_user_complaint(message):
     )
     
     try:
+        # Step 1: Send Header Info to Admin
         bot.send_message(ADMIN_ID, admin_notification)
+        # Step 2: Forward exact media/photo/video/text to Admin
         bot.copy_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id)
+        # Step 3: Send Confirmation to User
         bot.send_message(message.chat.id, "✅ **Aapki complaint Admin ko bhej di gayi hai!**\nJald hi aapko response mil jayega.", reply_markup=get_back_keyboard())
     except Exception as e:
         print(f"Complaint Error: {e}")
         bot.send_message(message.chat.id, "⚠️ Complaint bhejne mein error aaya. Kripya Admin se direct chat karein.", reply_markup=get_back_keyboard())
 
 # ---------------------------------------------------------
-# SAFE POLLING (CRASH FIX)
+# BOT STARTUP
 # ---------------------------------------------------------
 if __name__ == '__main__':
     keep_alive()
-    try:
-        bot.remove_webhook()
-    except Exception:
-        pass
-    
-    # Simple and safe infinity polling
-    bot.infinity_polling(timeout=20, long_polling_timeout=10)
+    bot.remove_webhook()
+    bot.infinity_polling(timeout=10, long_polling_timeout=5, skip_pending=True)
