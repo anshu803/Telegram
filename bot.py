@@ -122,7 +122,19 @@ def send_start_sequence(chat_id, user_name):
             logging.error(f"Start Media Group Error: {e}")
 
     # Step 2: Quality Text Message
-    bot.send_message(chat_id, "✨ **TRY OUR ANY PLAN FOR CHECKING THE QUALITY** ✨")
+    bot.send_message(chat_id, "✨ **🎉 Welcome to VIP Access Bot!
+
+✨ Get exclusive access to premium content
+💰 Affordable plans starting at just ₹99
+✨ Cotent quality aisi ki dekhi nahi hogi 
+✨ Only Premium Content
+✨ Daily New Uploads
+✨ Cp, Rp, Indian, Foreign, Dark everything
+✨ 10000+ Cp videos
+✨  25000+ Rp videos 
+✨  M0m S0n 5k Videos
+
+✨ TRY OUR ANY PLAN FOR CHECKING THE QUALITY ✨** ✨")
     
     # Step 3: Welcome Message with Main Buttons
     welcome_msg = f"👋 Hello, **{user_name}**!\n\nChoose a plan to get started:"
