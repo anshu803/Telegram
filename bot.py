@@ -52,7 +52,7 @@ bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 users_list = set()
 pending_verifications = {}
 
-# Setup Commands
+# Commands Setup
 try:
     bot.set_my_commands([
         BotCommand("start", "Start Bot Menu"),
@@ -245,7 +245,7 @@ def send_payment_qr(chat_id, plan_info):
         )
 
 # ---------------------------------------------------------
-# UNIQUE PLAN DETAILS
+# UNIQUE PLAN DETAILS (EXACT ORIGINAL DESCRIPTIONS)
 # ---------------------------------------------------------
 sections = {
     "p1": {
@@ -544,5 +544,4 @@ if __name__ == '__main__':
 
     while True:
         try:
-            bot.polling(non_stop=True, interval=0, timeout=20)
-        exce
+            bot.polling(non_stop=True, interv
