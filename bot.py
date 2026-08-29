@@ -4,7 +4,7 @@ from flask import Flask
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Flask Server (Render ke liye)
+# Flask Server (Render Service Alive Rakhne Ke Liye)
 app = Flask('')
 
 @app.route('/')
@@ -17,27 +17,27 @@ def keep_alive():
     t.daemon = True
     t.start()
 
-# Bot Token & Admin Setup
+# Bot Token & Admin ID Setup
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
 ADMIN_ID = os.environ.get("ADMIN_ID", "123456789")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Main Keyboard Structure
+# Main Keyboard Structure (Pricing & Unique Names Ke Sath)
 def get_main_keyboard():
     markup = InlineKeyboardMarkup()
     
-    # 10 Vertical Buttons
-    markup.add(InlineKeyboardButton("⭐ Button 1", callback_data="b1"))
-    markup.add(InlineKeyboardButton("⭐ Button 2", callback_data="b2"))
-    markup.add(InlineKeyboardButton("⭐ Button 3", callback_data="b3"))
-    markup.add(InlineKeyboardButton("⭐ Button 4", callback_data="b4"))
-    markup.add(InlineKeyboardButton("⭐ Button 5", callback_data="b5"))
-    markup.add(InlineKeyboardButton("⭐ Button 6", callback_data="b6"))
-    markup.add(InlineKeyboardButton("⭐ Button 7", callback_data="b7"))
-    markup.add(InlineKeyboardButton("⭐ Button 8", callback_data="b8"))
-    markup.add(InlineKeyboardButton("⭐ Button 9", callback_data="b9"))
-    markup.add(InlineKeyboardButton("⭐ Button 10", callback_data="b10"))
+    # 10 Vertical Buttons (Har button ka alag naam aur pricing)
+    markup.add(InlineKeyboardButton("🎬 VIP Movie Plan - ₹199", callback_data="b1"))
+    markup.add(InlineKeyboardButton("📊 Trading Signals - ₹499", callback_data="b2"))
+    markup.add(InlineKeyboardButton("📘 Premium Course - ₹299", callback_data="b3"))
+    markup.add(InlineKeyboardButton("🛠️ Pro Software Pack - ₹399", callback_data="b4"))
+    markup.add(InlineKeyboardButton("👑 Private Channel Access - ₹999", callback_data="b5"))
+    markup.add(InlineKeyboardButton("🎁 Special Combo Offer - ₹599", callback_data="b6"))
+    markup.add(InlineKeyboardButton("🚀 AI Tools Access - ₹349", callback_data="b7"))
+    markup.add(InlineKeyboardButton("👥 Referral Program - Free", callback_data="b8"))
+    markup.add(InlineKeyboardButton("🔥 Lifetime Membership - ₹1499", callback_data="b9"))
+    markup.add(InlineKeyboardButton("💎 Exclusive VIP Pack - ₹1999", callback_data="b10"))
     
     # Last Row: Left (Help) & Right (Admin) Side-by-Side
     btn_help = InlineKeyboardButton("ℹ️ Help", callback_data="help")
@@ -49,74 +49,99 @@ def get_main_keyboard():
 # Back Button
 def get_back_keyboard():
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("⬅️ Back", callback_data="back"))
+    markup.add(InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="back"))
     return markup
 
-# /start Command
+# /start Command Handler (Seedhe Welcome Message Aayega)
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
     user_name = message.from_user.first_name
     user_id = message.from_user.id
     
-    # Pehle Task Message
-    bot.send_message(message.chat.id, "📋 *Pehle hamara channel join karein aur task poora karein.*", parse_mode="Markdown")
-    
-    # Phir Hello Name Mention ke sath Welcome & Buttons
-    welcome_msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nAapka swagat hai, niche diye gaye buttons par click karein:"
+    welcome_msg = (
+        f"Hello [{user_name}](tg://user?id={user_id})!\n\n"
+        "Aapka hamare Premium Bot mein swagat hai.\n"
+        "Kripya niche diye gaye plans mein se apna option chunhein:"
+    )
     bot.send_message(message.chat.id, welcome_msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
-# Button Click Actions
+# Video Send Karne Ka Helper Function (Video + Caption Text)
+def send_button_video(chat_id, video_path, text_caption):
+    if os.path.exists(video_path):
+        with open(video_path, 'rb') as v:
+            bot.send_video(chat_id, v, caption=text_caption, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    else:
+        # Agar video folder mein nahi milli toh text message bhejega
+        error_text = f"{text_caption}\n\n*(Note: Video file `{video_path}` missing hai, kripya videos folder mein dalein)*"
+        bot.send_message(chat_id, error_text, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+# Button Click Callback Handler
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
     data = call.data
     bot.answer_callback_query(call.id)
 
-    # Button 1 Response (Video Example)
+    # Button 1 Response
     if data == "b1":
-        video_path = "videos/video1.mp4"
-        if os.path.exists(video_path):
-            with open(video_path, 'rb') as v:
-                bot.send_video(chat_id, v, caption="🎥 Button 1 Response Video", reply_markup=get_back_keyboard())
-        else:
-            bot.edit_message_text("🎥 **Button 1 Selected!**\n\n(Video file `videos/video1.mp4` missing hai)", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "🎬 *VIP Movie Plan (Pricing: ₹199)*\n\nIs plan mein aapko latest HD movies aur series ka instant download link milega."
+        send_button_video(chat_id, "videos/video1.mp4", caption)
 
-    # Button 2 Response (Video Example)
+    # Button 2 Response
     elif data == "b2":
-        video_path = "videos/video2.mp4"
-        if os.path.exists(video_path):
-            with open(video_path, 'rb') as v:
-                bot.send_video(chat_id, v, caption="🎬 Button 2 Response Video", reply_markup=get_back_keyboard())
-        else:
-            bot.edit_message_text("🎬 **Button 2 Selected!**\n\n(Video file `videos/video2.mp4` missing hai)", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "📊 *Trading Signals Plan (Pricing: ₹499)*\n\nDaily 95%+ accurate Crypto aur Forex trading signals paane ke liye ye plan lein."
+        send_button_video(chat_id, "videos/video2.mp4", caption)
 
-    # Remaining Buttons Responses
+    # Button 3 Response
     elif data == "b3":
-        bot.edit_message_text("Aapne **Button 3** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "📘 *Premium Course (Pricing: ₹299)*\n\nIs course mein aapko basic se advance tak full video classes milengi."
+        send_button_video(chat_id, "videos/video3.mp4", caption)
+
+    # Button 4 Response
     elif data == "b4":
-        bot.edit_message_text("Aapne **Button 4** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "🛠️ *Pro Software Pack (Pricing: ₹399)*\n\nIsme Android aur PC ke sabhi unlocked premium tools milenge."
+        send_button_video(chat_id, "videos/video4.mp4", caption)
+
+    # Button 5 Response
     elif data == "b5":
-        bot.edit_message_text("Aapne **Button 5** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "👑 *Private Channel Access (Pricing: ₹999)*\n\nHamare private VIP channel ki 1-Month membership."
+        send_button_video(chat_id, "videos/video5.mp4", caption)
+
+    # Button 6 Response
     elif data == "b6":
-        bot.edit_message_text("Aapne **Button 6** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "🎁 *Special Combo Offer (Pricing: ₹599)*\n\nMovies + Software + Courses sabhi ek hi pack mein."
+        send_button_video(chat_id, "videos/video6.mp4", caption)
+
+    # Button 7 Response
     elif data == "b7":
-        bot.edit_message_text("Aapne **Button 7** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "🚀 *AI Tools Access (Pricing: ₹349)*\n\nBest ChatGPT aur image generation AI tools ka full access."
+        send_button_video(chat_id, "videos/video7.mp4", caption)
+
+    # Button 8 Response
     elif data == "b8":
-        bot.edit_message_text("Aapne **Button 8** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "👥 *Referral Program (Pricing: FREE)*\n\nApne dosto ko link share karein aur har joining par commission payein."
+        send_button_video(chat_id, "videos/video8.mp4", caption)
+
+    # Button 9 Response
     elif data == "b9":
-        bot.edit_message_text("Aapne **Button 9** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        caption = "🔥 *Lifetime Membership (Pricing: ₹1499)*\n\nEk baar pay karein aur lifetime tak sabhi premium updates payein."
+        send_button_video(chat_id, "videos/video9.mp4", caption)
+
+    # Button 10 Response
     elif data == "b10":
-        bot.edit_message_text("Aapne **Button 10** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
-    
+        caption = "💎 *Exclusive VIP Pack (Pricing: ₹1999)*\n\nAll-in-one VIP Access + Personal Admin Support."
+        send_button_video(chat_id, "videos/video10.mp4", caption)
+
     # Help Action
     elif data == "help":
-        bot.edit_message_text("ℹ️ **Help & Support:** Admin se baat karein.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+        help_text = "ℹ️ *Help & Support*\n\nKisi bhi dikkat ya payment confirmation ke liye Admin se sampark karein."
+        bot.send_message(chat_id, help_text, parse_mode="Markdown", reply_markup=get_back_keyboard())
 
-    # Back Action
+    # Back to Main Menu Action
     elif data == "back":
         user_name = call.from_user.first_name
         user_id = call.from_user.id
-        msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nNiche diye gaye options mein se chunhein:"
+        msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nKripya niche diye gaye plans mein se chunhein:"
         bot.send_message(chat_id, msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
 if __name__ == '__main__':
