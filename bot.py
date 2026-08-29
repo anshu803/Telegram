@@ -134,7 +134,7 @@ def send_start_sequence(chat_id, user_name):
 ✨  25000+ Rp videos 
 ✨  M0m S0n 5k Videos
 
-✨ TRY OUR ANY PLAN FOR CHECKING THE QUALITY ✨ ✨")
+("✨ TRY OUR ANY PLAN FOR CHECKING THE QUALITY ✨ ✨")
     
     # Step 3: Welcome Message with Main Buttons
     welcome_msg = f"👋 Hello, 🦋💸**{user_name}**!\n\nChoose a plan to get started:"
