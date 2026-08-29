@@ -1,32 +1,46 @@
 import os
 import logging
 from threading import Thread
-from flask import Flask
+from flask import Flask, jsonify
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaVideo, BotCommand
 
 logging.basicConfig(level=logging.INFO)
 
-# Flask Server (Render Service Alive Rakhne Ke Liye)
-app = Flask('')
+# ---------------------------------------------------------
+# RENDER WEB SERVICE & UPTIMEROBOT SUPPORT
+# ---------------------------------------------------------
+app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot is active!"
+    return "Bot Web Service is running perfectly!"
+
+# UptimeRobot / Ping Endpoint (Is URL ko UptimeRobot par add karein)
+@app.route('/ping')
+def ping():
+    return jsonify(status="alive", code=200)
+
+def run_flask():
+    # Render environment variable se PORT fetch karta hai (default 8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
-    port = int(os.environ.get("PORT", 8080))
-    t = Thread(target=lambda: app.run(host='0.0.0.0', port=port))
+    t = Thread(target=run_flask)
     t.daemon = True
     t.start()
 
+# ---------------------------------------------------------
+# TELEGRAM BOT SETUP
+# ---------------------------------------------------------
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 
 bot = telebot.TeleBot(BOT_TOKEN)
 users_list = set()
 
-# Menu Bar Commands Setup
+# Menu Bar Commands Setup (/start & /broadcast)
 try:
     bot.set_my_commands([
         BotCommand("start", "Start Bot Menu"),
@@ -35,7 +49,7 @@ try:
 except Exception as e:
     print(f"Commands error: {e}")
 
-# Main Keyboard Structure (Sabhi 10 Vertical + 2 Bottom Side-by-Side Buttons)
+# Main Keyboard Structure
 def get_main_keyboard():
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("VIP Movie Plan - ₹199", callback_data="b1"))
@@ -49,6 +63,7 @@ def get_main_keyboard():
     markup.add(InlineKeyboardButton("Lifetime Membership - ₹1499", callback_data="b9"))
     markup.add(InlineKeyboardButton("Exclusive VIP Pack - ₹1999", callback_data="b10"))
     
+    # Bottom Row: Help (Left) & Admin (Right) Side-by-Side
     btn_help = InlineKeyboardButton("Help", callback_data="help")
     btn_admin = InlineKeyboardButton("Admin", url=f"tg://user?id={ADMIN_ID}")
     markup.row(btn_help, btn_admin)
@@ -59,20 +74,18 @@ def get_back_keyboard():
     markup.add(InlineKeyboardButton("Back to Main Menu", callback_data="back"))
     return markup
 
-# Safe Video Media Group Sender Function
+# 3 Videos Media Group Helper
 def send_3_videos(chat_id, v1_path, v2_path, v3_path, caption_text):
     paths = [v1_path, v2_path, v3_path]
     files_to_close = []
     media_group = []
 
     for index, path in enumerate(paths):
-        # Local file check
         if os.path.exists(path):
             f = open(path, 'rb')
             files_to_close.append(f)
             cap = caption_text if index == 0 else ""
             media_group.append(InputMediaVideo(f, caption=cap, parse_mode="Markdown"))
-        # Agar File ID direct string di gayi hai
         elif isinstance(path, str) and not path.endswith('.mp4'):
             cap = caption_text if index == 0 else ""
             media_group.append(InputMediaVideo(path, caption=cap, parse_mode="Markdown"))
@@ -87,7 +100,6 @@ def send_3_videos(chat_id, v1_path, v2_path, v3_path, caption_text):
             for f in files_to_close:
                 f.close()
     else:
-        # Fallback agar video nahi mili tab bhi text bhej dega
         bot.send_message(chat_id, caption_text, parse_mode="Markdown")
 
 # /start Command Handler
@@ -97,8 +109,9 @@ def start_cmd(message):
     user_name = message.from_user.first_name
     user_id = message.from_user.id
 
-    # Step 1: Pehle 3 Videos ek sath jayengi (Caption ke sath)
     intro_caption = f"🔥 **Welcome to Premium Bot!**\n\nHello [{user_name}](tg://user?id={user_id})!\nYe aapke liye Intro Videos hain."
+    
+    # 1. Pehle 3 Videos Aayengi
     send_3_videos(
         message.chat.id, 
         "videos/start1.mp4", 
@@ -107,18 +120,18 @@ def start_cmd(message):
         intro_caption
     )
 
-    # Step 2: Uske Baad Welcome Message aur Buttons HAR HAAL MEIN AAYENGE
+    # 2. Phir Welcome Message aur Subhi Buttons Aayenge
     welcome_text = f"Hello [{user_name}](tg://user?id={user_id})!\n\nNiche diye gaye options mein se chunhein:"
     bot.send_message(message.chat.id, welcome_text, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
-# /broadcast Command Handler (Admin Side-Menu Feature)
+# /broadcast Command Handler (Admin Only)
 @bot.message_handler(commands=['broadcast'])
 def broadcast_cmd(message):
     if message.from_user.id != ADMIN_ID:
         bot.reply_to(message, "⚠️ Aap Admin nahi hain!")
         return
 
-    msg = bot.reply_to(message, "📢 Broadcast ke liye koi bhi Text, Photo ya Video bhejien:")
+    msg = bot.reply_to(message, "📢 Broadcast ke liye text, photo ya video bhejien:")
     bot.register_next_step_handler(msg, process_broadcast)
 
 def process_broadcast(message):
@@ -131,7 +144,7 @@ def process_broadcast(message):
             pass
     bot.send_message(message.chat.id, f"✅ Broadcast successfully {count} users ko bhej diya gaya!")
 
-# Callback Button Handler
+# Callback Buttons Handler
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
