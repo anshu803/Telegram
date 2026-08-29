@@ -271,7 +271,12 @@ sections = {
         "name": "✨ PLAN 3", 
         "price": "96", 
         "validity": "30 Days",
-        "desc": "✨ PREMIUM EXCLUSIVE VVIP ACCESS",
+        "desc": "✨10000+ 𝐌0𝐦&𝐒0𝐧 Videos
+✨ 6000+ 𝐑@𝐩€ Videos
+✨ New Content upload Regularly
+
+📦 ✨ G0RE R@PE ✨
+💰 Price: ₹96 | ⏳ 30 Days",
         "media": ["videos/video4.mp4", "videos/video5.mp4", "videos/video6.mp4"]
     },
     "p4": {
