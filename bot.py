@@ -1,127 +1,124 @@
 import os
-import logging
 from threading import Thread
 from flask import Flask
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Logging Configuration
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+# Flask Server (Render ke liye)
+app = Flask('')
 
-# Flask Server for Render Web Service Uptime
-web_app = Flask('')
-
-@web_app.route('/')
+@app.route('/')
 def home():
-    return "Bot is active and running!"
-
-def run_web_server():
-    port = int(os.environ.get("PORT", 8080))
-    web_app.run(host='0.0.0.0', port=port)
+    return "Bot Alive"
 
 def keep_alive():
-    t = Thread(target=run_web_server)
+    port = int(os.environ.get("PORT", 8080))
+    t = Thread(target=lambda: app.run(host='0.0.0.0', port=port))
     t.daemon = True
     t.start()
 
-# Tokens from Environment Variables
+# Bot Token & Admin Setup
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
 ADMIN_ID = os.environ.get("ADMIN_ID", "123456789")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
+bot = telebot.TeleBot(BOT_TOKEN)
+
+# Main Keyboard Structure
+def get_main_keyboard():
+    markup = InlineKeyboardMarkup()
     
-    # Task Message
-    task_text = (
-        "📋 **Task:**\n"
-        "Humare official updates ke liye channel ko join karein aur sabhi niyam padhein."
-    )
-    await update.message.reply_text(task_text, parse_mode="Markdown")
-
-    # Main Buttons Layout (10 Verticals + 2 Side-by-Side at Bottom)
-    keyboard = [
-        [InlineKeyboardButton("⭐ Premium Option 1", callback_data="opt_1")],
-        [InlineKeyboardButton("⭐ Premium Option 2", callback_data="opt_2")],
-        [InlineKeyboardButton("⭐ Premium Option 3", callback_data="opt_3")],
-        [InlineKeyboardButton("⭐ Premium Option 4", callback_data="opt_4")],
-        [InlineKeyboardButton("⭐ Premium Option 5", callback_data="opt_5")],
-        [InlineKeyboardButton("⭐ Premium Option 6", callback_data="opt_6")],
-        [InlineKeyboardButton("⭐ Premium Option 7", callback_data="opt_7")],
-        [InlineKeyboardButton("⭐ Premium Option 8", callback_data="opt_8")],
-        [InlineKeyboardButton("⭐ Premium Option 9", callback_data="opt_9")],
-        [InlineKeyboardButton("⭐ Premium Option 10", callback_data="opt_10")],
-        [
-            InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-            InlineKeyboardButton("📩 Admin", url=f"tg://user?id={ADMIN_ID}")
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # Welcome Message with User Mention
-    welcome_msg = (
-        f"Hello {user.mention_markdown_v2()}!\n\n"
-        "Aapka hamare Telegram Premium Bot mein swagat hai.\n"
-        "Kripya niche diye gaye options mein se chunhein:"
-    )
+    # 10 Vertical Buttons
+    markup.add(InlineKeyboardButton("⭐ Button 1", callback_data="b1"))
+    markup.add(InlineKeyboardButton("⭐ Button 2", callback_data="b2"))
+    markup.add(InlineKeyboardButton("⭐ Button 3", callback_data="b3"))
+    markup.add(InlineKeyboardButton("⭐ Button 4", callback_data="b4"))
+    markup.add(InlineKeyboardButton("⭐ Button 5", callback_data="b5"))
+    markup.add(InlineKeyboardButton("⭐ Button 6", callback_data="b6"))
+    markup.add(InlineKeyboardButton("⭐ Button 7", callback_data="b7"))
+    markup.add(InlineKeyboardButton("⭐ Button 8", callback_data="b8"))
+    markup.add(InlineKeyboardButton("⭐ Button 9", callback_data="b9"))
+    markup.add(InlineKeyboardButton("⭐ Button 10", callback_data="b10"))
     
-    await update.message.reply_text(welcome_msg, reply_markup=reply_markup, parse_mode="MarkdownV2")
+    # Last Row: Left (Help) & Right (Admin) Side-by-Side
+    btn_help = InlineKeyboardButton("ℹ️ Help", callback_data="help")
+    btn_admin = InlineKeyboardButton("📩 Admin", url=f"tg://user?id={ADMIN_ID}")
+    markup.row(btn_help, btn_admin)
+    
+    return markup
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
+# Back Button
+def get_back_keyboard():
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("⬅️ Back", callback_data="back"))
+    return markup
 
-    if data.startswith("opt_"):
-        num = data.split("_")[1]
-        msg = f"Aapne **Option {num}** select kiya hai!"
-        back_keyboard = [[InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="back_to_menu")]]
-        await query.edit_message_text(msg, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(back_keyboard))
+# /start Command
+@bot.message_handler(commands=['start'])
+def start_cmd(message):
+    user_name = message.from_user.first_name
+    user_id = message.from_user.id
+    
+    # Pehle Task Message
+    bot.send_message(message.chat.id, "📋 *Pehle hamara channel join karein aur task poora karein.*", parse_mode="Markdown")
+    
+    # Phir Hello Name Mention ke sath Welcome & Buttons
+    welcome_msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nAapka swagat hai, niche diye gaye buttons par click karein:"
+    bot.send_message(message.chat.id, welcome_msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
+# Button Click Actions
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+    chat_id = call.message.chat.id
+    data = call.data
+    bot.answer_callback_query(call.id)
+
+    # Button 1 Response (Video Example)
+    if data == "b1":
+        video_path = "videos/video1.mp4"
+        if os.path.exists(video_path):
+            with open(video_path, 'rb') as v:
+                bot.send_video(chat_id, v, caption="🎥 Button 1 Response Video", reply_markup=get_back_keyboard())
+        else:
+            bot.edit_message_text("🎥 **Button 1 Selected!**\n\n(Video file `videos/video1.mp4` missing hai)", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    # Button 2 Response (Video Example)
+    elif data == "b2":
+        video_path = "videos/video2.mp4"
+        if os.path.exists(video_path):
+            with open(video_path, 'rb') as v:
+                bot.send_video(chat_id, v, caption="🎬 Button 2 Response Video", reply_markup=get_back_keyboard())
+        else:
+            bot.edit_message_text("🎬 **Button 2 Selected!**\n\n(Video file `videos/video2.mp4` missing hai)", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    # Remaining Buttons Responses
+    elif data == "b3":
+        bot.edit_message_text("Aapne **Button 3** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b4":
+        bot.edit_message_text("Aapne **Button 4** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b5":
+        bot.edit_message_text("Aapne **Button 5** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b6":
+        bot.edit_message_text("Aapne **Button 6** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b7":
+        bot.edit_message_text("Aapne **Button 7** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b8":
+        bot.edit_message_text("Aapne **Button 8** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b9":
+        bot.edit_message_text("Aapne **Button 9** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "b10":
+        bot.edit_message_text("Aapne **Button 10** dabaya hai.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    
+    # Help Action
     elif data == "help":
-        msg = "ℹ️ **Help & Support**\n\nKisi bhi dikkat ke liye Admin se sampark karein."
-        back_keyboard = [[InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="back_to_menu")]]
-        await query.edit_message_text(msg, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(back_keyboard))
+        bot.edit_message_text("ℹ️ **Help & Support:** Admin se baat karein.", chat_id, call.message.message_id, parse_mode="Markdown", reply_markup=get_back_keyboard())
 
-    elif data == "back_to_menu":
-        user = query.from_user
-        keyboard = [
-            [InlineKeyboardButton("⭐ Premium Option 1", callback_data="opt_1")],
-            [InlineKeyboardButton("⭐ Premium Option 2", callback_data="opt_2")],
-            [InlineKeyboardButton("⭐ Premium Option 3", callback_data="opt_3")],
-            [InlineKeyboardButton("⭐ Premium Option 4", callback_data="opt_4")],
-            [InlineKeyboardButton("⭐ Premium Option 5", callback_data="opt_5")],
-            [InlineKeyboardButton("⭐ Premium Option 6", callback_data="opt_6")],
-            [InlineKeyboardButton("⭐ Premium Option 7", callback_data="opt_7")],
-            [InlineKeyboardButton("⭐ Premium Option 8", callback_data="opt_8")],
-            [InlineKeyboardButton("⭐ Premium Option 9", callback_data="opt_9")],
-            [InlineKeyboardButton("⭐ Premium Option 10", callback_data="opt_10")],
-            [
-                InlineKeyboardButton("ℹ️ Help", callback_data="help"),
-                InlineKeyboardButton("📩 Admin", url=f"tg://user?id={ADMIN_ID}")
-            ]
-        ]
-        welcome_msg = (
-            f"Hello {user.mention_markdown_v2()}!\n\n"
-            "Kripya niche diye gaye options mein se chunhein:"
-        )
-        await query.edit_message_text(welcome_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="MarkdownV2")
-
-def main():
-    keep_alive()
-
-    if not BOT_TOKEN:
-        print("Error: BOT_TOKEN is missing!")
-        return
-
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_handler))
-
-    print("Bot is successfully running...")
-    app.run_polling()
+    # Back Action
+    elif data == "back":
+        user_name = call.from_user.first_name
+        user_id = call.from_user.id
+        msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nNiche diye gaye options mein se chunhein:"
+        bot.send_message(chat_id, msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
 if __name__ == '__main__':
-    main()
+    keep_alive()
+    bot.infinity_polling(skip_pending=True)
