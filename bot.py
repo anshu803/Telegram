@@ -5,18 +5,18 @@ from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# Logging configuration
+# Logging Configuration
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-# Render Web Service / UptimeRobot ke liye Flask Server
+# Flask Server for Render Web Service Uptime
 web_app = Flask('')
 
 @web_app.route('/')
 def home():
-    return "Bot is alive and running!"
+    return "Bot is active and running!"
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
@@ -27,21 +27,21 @@ def keep_alive():
     t.daemon = True
     t.start()
 
-# Bot Token aur Admin ID Settings
+# Tokens from Environment Variables
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
 ADMIN_ID = os.environ.get("ADMIN_ID", "123456789")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
-    # Step 1: Pehle User ko Task Message milega
+    # Task Message
     task_text = (
         "📋 **Task:**\n"
         "Humare official updates ke liye channel ko join karein aur sabhi niyam padhein."
     )
     await update.message.reply_text(task_text, parse_mode="Markdown")
 
-    # Step 2: Main Keyboard Layout (10 Verticals + Last Row Mein 2 Side-by-Side)
+    # Main Buttons Layout (10 Verticals + 2 Side-by-Side at Bottom)
     keyboard = [
         [InlineKeyboardButton("⭐ Premium Option 1", callback_data="opt_1")],
         [InlineKeyboardButton("⭐ Premium Option 2", callback_data="opt_2")],
@@ -53,8 +53,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("⭐ Premium Option 8", callback_data="opt_8")],
         [InlineKeyboardButton("⭐ Premium Option 9", callback_data="opt_9")],
         [InlineKeyboardButton("⭐ Premium Option 10", callback_data="opt_10")],
-        
-        # Aakhri row: Left mein Help aur Right mein Admin button
         [
             InlineKeyboardButton("ℹ️ Help", callback_data="help"),
             InlineKeyboardButton("📩 Admin", url=f"tg://user?id={ADMIN_ID}")
@@ -62,10 +60,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Step 3: Hello [User Name] ke saath Welcome Message
+    # Welcome Message with User Mention
     welcome_msg = (
-        f"Hello {user.mention_markdown_v2()}\!\n\n"
-        "Aapka hamare Telegram Premium Bot mein swagat hai\.\n"
+        f"Hello {user.mention_markdown_v2()}!\n\n"
+        "Aapka hamare Telegram Premium Bot mein swagat hai.\n"
         "Kripya niche diye gaye options mein se chunhein:"
     )
     
@@ -106,17 +104,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
         ]
         welcome_msg = (
-            f"Hello {user.mention_markdown_v2()}\!\n\n"
+            f"Hello {user.mention_markdown_v2()}!\n\n"
             "Kripya niche diye gaye options mein se chunhein:"
         )
         await query.edit_message_text(welcome_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="MarkdownV2")
 
 def main():
-    # Flask Server Start Karein (Render Web Service ke liye)
     keep_alive()
 
     if not BOT_TOKEN:
-        print("Error: BOT_TOKEN sahi se set nahi hai!")
+        print("Error: BOT_TOKEN is missing!")
         return
 
     app = Application.builder().token(BOT_TOKEN).build()
