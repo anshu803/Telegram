@@ -62,7 +62,7 @@ def get_main_keyboard():
     markup = InlineKeyboardMarkup(row_width=1)
     
     markup.add(
-        InlineKeyboardButton("💦 PLAN 1 — ₹69 / 30d", callback_data="p1"),
+        InlineKeyboardButton("💦 𝐑𝐞𝐚𝐥 𝐈𝐧𝐝𝐢𝐚𝐧 𝐃ē𝐬𝐢 𝐏𝐨𝐫𝐧 1 — ₹69 / 30d", callback_data="p1"),
         InlineKeyboardButton("🌽 PLAN 2 — ₹79 / 30d", callback_data="p2"),
         InlineKeyboardButton("✨ PLAN 3 — ₹96 / 30d", callback_data="p3"),
         InlineKeyboardButton("✨ OFFER ✨ — ₹155 / 30d", callback_data="p4"),
@@ -323,3 +323,4 @@ if __name__ == '__main__':
         except Exception as e:
             logging.error(f"Polling crash prevented: {e}")
             time.sleep(3)
+    
