@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 from threading import Thread
 from flask import Flask, jsonify
@@ -20,7 +21,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot Online & Fast Response Active!"
+    return "Bot Online & Running!"
 
 @app.route('/ping')
 def ping():
@@ -52,10 +53,10 @@ try:
         BotCommand("broadcast", "Send Broadcast (Admin Only)")
     ])
 except Exception as e:
-    print(f"Commands setup error: {e}")
+    logging.error(f"Commands setup error: {e}")
 
 # ---------------------------------------------------------
-# KEYBOARD LAYOUTS (UI & Button Width Fix)
+# KEYBOARD LAYOUTS
 # ---------------------------------------------------------
 def get_main_keyboard():
     markup = InlineKeyboardMarkup(row_width=1)
@@ -80,7 +81,6 @@ def get_main_keyboard():
     return markup
 
 def get_product_buy_keyboard():
-    # Full Width Buttons to avoid screen overflow/wrapping issues
     markup = InlineKeyboardMarkup(row_width=1)
     markup.add(
         InlineKeyboardButton("💳 Buy Now", url=f"https://t.me/{ADMIN_USERNAME}"),
@@ -89,7 +89,7 @@ def get_product_buy_keyboard():
     return markup
 
 # ---------------------------------------------------------
-# FAST DYNAMIC MEDIA SENDER (Streaming & Layout Fix)
+# FAST DYNAMIC MEDIA SENDER
 # ---------------------------------------------------------
 def send_section_content(chat_id, plan_title, price, validity, desc, media_files):
     caption_text = (
@@ -102,20 +102,17 @@ def send_section_content(chat_id, plan_title, price, validity, desc, media_files
     for f_path in media_files:
         if os.path.exists(f_path):
             if f_path.endswith(('.mp4', '.mkv', '.mov')):
-                # Fast Streaming Enablement to prevent truncation/slow downloads
                 valid_media.append(InputMediaVideo(open(f_path, 'rb'), supports_streaming=True))
             elif f_path.endswith(('.jpg', '.jpeg', '.png')):
                 valid_media.append(InputMediaPhoto(open(f_path, 'rb')))
 
-    # Multiple Files (2 Line vs 3 Line Grid Album)
     if len(valid_media) > 1:
         try:
             bot.send_media_group(chat_id, valid_media)
         except Exception as e:
-            print(f"Media group send error: {e}")
+            logging.error(f"Media group send error: {e}")
         bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
-    # Single Media File: Full Width Direct Display
     elif len(valid_media) == 1:
         single_path = media_files[0]
         try:
@@ -135,16 +132,15 @@ def send_section_content(chat_id, plan_title, price, validity, desc, media_files
                         reply_markup=get_product_buy_keyboard()
                     )
         except Exception as e:
-            print(f"Single media send error: {e}")
+            logging.error(f"Single media send error: {e}")
             bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
     else:
         bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
-# BOT HANDLERS & SECTION MAPPING
+# HANDLERS
 # ---------------------------------------------------------
-
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
     users_list.add(message.chat.id)
@@ -182,55 +178,53 @@ def callback_handler(call):
     data = call.data
     bot.answer_callback_query(call.id)
 
-    # EXACT SCREENSHOT MATCHING CONFIGURATION:
-    # 2-Line vs 3-Line & Mix Photos as specified in UI references
     sections = {
-        "p1": { # 2 Line Layout
+        "p1": {
             "name": "PLAN 1 PACK", "price": "69", "validity": "30 Days",
             "desc": "PERMANENT VVIP GROUP ACCESS",
             "media": ["videos/video1.mp4", "videos/video2.mp4"] 
         },
-        "p2": { # 2 Line Layout (With Photo Mix)
+        "p2": {
             "name": "PLAN 2 PACK", "price": "79", "validity": "30 Days",
             "desc": "HOT DESI VVIP PACK",
             "media": ["videos/photo1.jpg", "videos/video2.mp4"]
         },
-        "p3": { # 3 Line Grid Layout
+        "p3": {
             "name": "PLAN 3 PACK", "price": "96", "validity": "30 Days",
             "desc": "PREMIUM EXCLUSIVE ACCESS",
             "media": ["videos/video1.mp4", "videos/video2.mp4", "videos/video3.mp4"]
         },
-        "p4": { # 3 Line Grid Layout
+        "p4": {
             "name": "OFFER PACK ✨", "price": "155", "validity": "30 Days",
             "desc": "SPECIAL DISCOUNT OFFER WITH FULL MEDIA",
             "media": ["videos/video4.mp4", "videos/video1.mp4", "videos/video2.mp4"]
         },
-        "p5": { # 3 Line Layout
+        "p5": {
             "name": "BEST OFFER 🥳", "price": "89", "validity": "365 Days",
             "desc": "1 YEAR UNLIMITED VIP ACCESS",
             "media": ["videos/video5.mp4", "videos/video1.mp4", "videos/video3.mp4"]
         },
-        "p6": { # 3 Line Layout (Photo Mix)
+        "p6": {
             "name": "PLAN 6 PACK", "price": "111", "validity": "60 Days",
             "desc": "60 DAYS FULL VVIP PACK",
             "media": ["videos/photo2.jpg", "videos/video6.mp4", "videos/video2.mp4"]
         },
-        "p7": { # 3 Line Layout
+        "p7": {
             "name": "PLAN 7 PACK", "price": "129", "validity": "60 Days",
             "desc": "INFLUENCER 50% OFF PACK",
             "media": ["videos/video7.mp4", "videos/video1.mp4", "videos/video3.mp4"]
         },
-        "p8": { # 3 Line Layout
+        "p8": {
             "name": "PAID PACK", "price": "88", "validity": "30 Days",
             "desc": "BAAP BETI VVIP SPECIAL PACK",
             "media": ["videos/video8.mp4", "videos/video2.mp4", "videos/video3.mp4"]
         },
-        "p9": { # 3 Line Layout
+        "p9": {
             "name": "PLAN 9 PACK", "price": "111", "validity": "60 Days",
             "desc": "SUPER VIP ACCESS PACK",
             "media": ["videos/video9.mp4", "videos/video1.mp4", "videos/video2.mp4"]
         },
-        "p10": { # 3 Line Grid Layout
+        "p10": {
             "name": "VVIP PLAN 1 LAKH VIDEO", "price": "277", "validity": "365 Days",
             "desc": "PERMANENT VVIP GROUP YOU WILL GET 10 GROUP LINKS ALL VIRAL AND PREMIUM GROUP WORTH IT JUST BUY 🥵💦",
             "media": ["videos/video1.mp4", "videos/video2.mp4", "videos/video3.mp4"]
@@ -268,7 +262,6 @@ def callback_handler(call):
         else:
             bot.send_message(chat_id, welcome_text, reply_markup=get_main_keyboard())
 
-# Complaint Handler
 def process_user_complaint(message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
@@ -286,13 +279,26 @@ def process_user_complaint(message):
         bot.copy_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id)
         bot.send_message(message.chat.id, "✅ **Aapki complaint Admin ko bhej di gayi hai!**", reply_markup=get_product_buy_keyboard())
     except Exception as e:
-        print(f"Complaint Error: {e}")
+        logging.error(f"Complaint Error: {e}")
         bot.send_message(message.chat.id, "⚠️ Complaint error. Direct Admin se contact karein.", reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
-# BOT STARTUP
+# SAFE BOT STARTUP & RECONNECT LOOP
 # ---------------------------------------------------------
 if __name__ == '__main__':
     keep_alive()
-    bot.remove_webhook()
-    bot.infinity_polling(timeout=10, long_polling_timeout=5, skip_pending=True)
+    
+    # Safe Reset Webhook & Clear Pending Updates
+    try:
+        bot.delete_webhook(drop_pending_updates=True)
+        time.sleep(1)
+    except Exception as e:
+        logging.warning(f"Could not clear webhooks: {e}")
+
+    # Auto Reconnect Polling Loop
+    while True:
+        try:
+            bot.polling(non_stop=True, interval=0, timeout=20)
+        except Exception as e:
+            logging.error(f"Polling crash prevented: {e}")
+            time.sleep(3)
