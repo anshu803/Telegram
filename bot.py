@@ -3,7 +3,13 @@ import logging
 from threading import Thread
 from flask import Flask, jsonify
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
+from telebot.types import (
+    InlineKeyboardMarkup, 
+    InlineKeyboardButton, 
+    BotCommand, 
+    InputMediaVideo, 
+    InputMediaPhoto
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,14 +45,14 @@ ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 users_list = set()
 
-# Side-Menu Bar Commands Setup
+# Setup Commands
 try:
     bot.set_my_commands([
         BotCommand("start", "Start Bot Menu"),
         BotCommand("broadcast", "Send Broadcast (Admin Only)")
     ])
 except Exception as e:
-    print(f"Commands set error: {e}")
+    print(f"Commands error: {e}")
 
 # ---------------------------------------------------------
 # KEYBOARD LAYOUTS
@@ -69,34 +75,46 @@ def get_main_keyboard():
     markup.row(btn_how, btn_report)
     return markup
 
-def get_back_keyboard():
+def get_product_buy_keyboard():
     markup = InlineKeyboardMarkup()
-    btn_back = InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="back")
-    btn_buy = InlineKeyboardButton("💬 Buy / Contact Admin", url=f"https://t.me/{ADMIN_USERNAME}")
-    markup.add(btn_back)
+    btn_buy = InlineKeyboardButton("💳 Buy Now", url=f"https://t.me/{ADMIN_USERNAME}")
+    btn_back = InlineKeyboardButton("⬅️ Back", callback_data="back")
     markup.add(btn_buy)
+    markup.add(btn_back)
     return markup
 
 # ---------------------------------------------------------
-# MEDIA SENDER HELPER FUNCTION
+# HAR PRODUCT KE LIYE ALAG MEDIA ALBUM SENDER
 # ---------------------------------------------------------
-def send_media_or_text(chat_id, text, file_path, reply_markup):
-    """Local file upload karta hai agar file folder me maujood ho"""
-    if os.path.exists(file_path):
+def send_product_details(chat_id, plan_title, price, validity, desc, video_list, photo_list):
+    media = []
+    
+    # 1. Product specific Videos
+    for v_path in video_list:
+        if os.path.exists(v_path):
+            media.append(InputMediaVideo(open(v_path, 'rb')))
+
+    # 2. Product specific Photos
+    for p_path in photo_list:
+        if os.path.exists(p_path):
+            media.append(InputMediaPhoto(open(p_path, 'rb')))
+
+    # Caption (Bilkul aapke screenshot wale design par)
+    caption_text = (
+        f"{desc}\n\n"
+        f"📦 **{plan_title}** 😍\n"
+        f"💰 **Price: ₹{price}** | ⏳ **{validity}**"
+    )
+
+    # Step A: Album Media Grid Send Karo
+    if media:
         try:
-            if file_path.endswith(('.mp4', '.mkv', '.mov')):
-                with open(file_path, 'rb') as video:
-                    bot.send_video(chat_id, video, caption=text, reply_markup=reply_markup)
-                return
-            elif file_path.endswith(('.jpg', '.jpeg', '.png')):
-                with open(file_path, 'rb') as photo:
-                    bot.send_photo(chat_id, photo, caption=text, reply_markup=reply_markup)
-                return
+            bot.send_media_group(chat_id, media)
         except Exception as e:
-            print(f"Error sending file {file_path}: {e}")
-            
-    # Agar file nahi milti ya fail hoti hai to simple message bhejega
-    bot.send_message(chat_id, text, reply_markup=reply_markup)
+            print(f"Media send error: {e}")
+
+    # Step B: Direct Text + Buy Now / Back Buttons Send Karo
+    bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
 # BOT HANDLERS
@@ -106,10 +124,13 @@ def send_media_or_text(chat_id, text, file_path, reply_markup):
 def start_cmd(message):
     users_list.add(message.chat.id)
     user_name = message.from_user.first_name
-    welcome_text = f"👋 Hello, {user_name}!\n\nChoose a plan to get started:"
+    welcome_text = f"👋 Hello, **{user_name}**!\n\nChoose a plan from below to get started:"
     
-    # Start hone par videos/video1.mp4 bhejega
-    send_media_or_text(message.chat.id, welcome_text, "videos/video1.mp4", get_main_keyboard())
+    if os.path.exists("videos/video1.mp4"):
+        with open("videos/video1.mp4", "rb") as vid:
+            bot.send_video(message.chat.id, vid, caption=welcome_text, reply_markup=get_main_keyboard())
+    else:
+        bot.send_message(message.chat.id, welcome_text, reply_markup=get_main_keyboard())
 
 @bot.message_handler(commands=['broadcast'])
 def broadcast_cmd(message):
@@ -117,7 +138,7 @@ def broadcast_cmd(message):
         bot.reply_to(message, "⚠️ Aap Admin nahi hain!")
         return
 
-    msg = bot.reply_to(message, "📢 Broadcast ke liye text/media reply karein:")
+    msg = bot.reply_to(message, "📢 Broadcast message/media send karein:")
     bot.register_next_step_handler(msg, process_broadcast)
 
 def process_broadcast(message):
@@ -136,33 +157,97 @@ def callback_handler(call):
     data = call.data
     bot.answer_callback_query(call.id)
 
-    # Plans Details mapped with respective repo files (videos/ & photos/)
-    plans_config = {
-        "p1": {"text": "💎 **PLAN 1 Details**\n\nPrice: ₹69\nValidity: 30 Days", "file": "videos/video2.mp4"},
-        "p2": {"text": "💎 **PLAN 2 Details**\n\nPrice: ₹79\nValidity: 30 Days", "file": "videos/video3.mp4"},
-        "p3": {"text": "💎 **PLAN 3 Details**\n\nPrice: ₹96\nValidity: 30 Days", "file": "videos/video4.mp4"},
-        "p4": {"text": "✨ **OFFER PLAN Details**\n\nPrice: ₹155\nValidity: 30 Days", "file": "videos/video5.mp4"},
-        "p5": {"text": "🥳 **BEST OFFER PLAN Details**\n\nPrice: ₹89\nValidity: 365 Days", "file": "videos/video6.mp4"},
-        "p6": {"text": "💎 **PLAN 6 Details**\n\nPrice: ₹111\nValidity: 60 Days", "file": "videos/photo1.jpg"},
-        "p7": {"text": "💎 **PLAN 7 Details**\n\nPrice: ₹129\nValidity: 60 Days", "file": "videos/photo2.jpg"},
-        "p8": {"text": "💎 **PAID PACK Details**\n\nPrice: ₹88\nValidity: 30 Days", "file": "videos/photo3.jpg"},
-        "p9": {"text": "💎 **VIP VIDEO PACK Details**\n\nPrice: ₹277\nValidity: 365 Days", "file": "videos/photo4.jpg"},
-        "how_to_use": {"text": "📖 **How to Use Guide**\n\n1. Plan choose karein.\n2. Access lene ke liye Admin contact karein ya Issue Report karein.", "file": "videos/photo5.jpg"}
+    # HAR BUTTON (PRODUCT) KA APNA ALAG SYSTEM CONFIGURATION
+    products = {
+        "p1": {
+            "name": "PLAN 1 PACK", "price": "69", "validity": "30 Days",
+            "desc": "PERMANENT VVIP GROUP YOU WILL GET ALL VIRAL AND PREMIUM CONTENT",
+            "videos": ["videos/video1.mp4", "videos/video2.mp4"],
+            "photos": ["videos/photo1.jpg"]
+        },
+        "p2": {
+            "name": "PLAN 2 PACK", "price": "79", "validity": "30 Days",
+            "desc": "FULL HD EXCLUSIVE MEDIA PACK",
+            "videos": ["videos/video2.mp4", "videos/video3.mp4"],
+            "photos": ["videos/photo2.jpg"]
+        },
+        "p3": {
+            "name": "PLAN 3 PACK", "price": "96", "validity": "30 Days",
+            "desc": "TOP TRENDING PREMIUM LINKS COLLECTION",
+            "videos": ["videos/video3.mp4", "videos/video4.mp4"],
+            "photos": ["videos/photo3.jpg"]
+        },
+        "p4": {
+            "name": "OFFER PACK ✨", "price": "155", "validity": "30 Days",
+            "desc": "SPECIAL DISCOUNT OFFER WITH EXTRA MEDIA ACCESS",
+            "videos": ["videos/video4.mp4", "videos/video5.mp4"],
+            "photos": ["videos/photo4.jpg"]
+        },
+        "p5": {
+            "name": "BEST YEARLY OFFER 🥳", "price": "89", "validity": "365 Days",
+            "desc": "1 YEAR FULL UNLIMITED ACCESS PACK",
+            "videos": ["videos/video5.mp4", "videos/video6.mp4"],
+            "photos": ["videos/photo5.jpg"]
+        },
+        "p6": {
+            "name": "PLAN 6 PACK", "price": "111", "validity": "60 Days",
+            "desc": "60 DAYS UNLIMITED VVIP LINKS",
+            "videos": ["videos/video6.mp4", "videos/video7.mp4"],
+            "photos": ["videos/photo6.jpg"]
+        },
+        "p7": {
+            "name": "PLAN 7 PACK", "price": "129", "validity": "60 Days",
+            "desc": "SUPER PREMIUM CONTENT PACK",
+            "videos": ["videos/video7.mp4", "videos/video8.mp4"],
+            "photos": ["videos/photo7.jpg"]
+        },
+        "p8": {
+            "name": "PAID PACK", "price": "88", "validity": "30 Days",
+            "desc": "EXCLUSIVE PAID VVIP GROUP LINKS",
+            "videos": ["videos/video8.mp4", "videos/video9.mp4"],
+            "photos": ["videos/photo1.jpg"]
+        },
+        "p9": {
+            "name": "VVIP PLAN 1 LAKH VIDEO 🍿", "price": "277", "validity": "365 Days",
+            "desc": "PERMANENT VVIP GROUP YOU WILL GET 10 GROUP LINKS ALL VIRAL AND PREMIUM GROUP WORTH IT JUST BUY 🥵💦",
+            "videos": ["videos/video1.mp4", "videos/video2.mp4", "videos/video3.mp4"],
+            "photos": ["videos/photo1.jpg", "videos/photo2.jpg", "videos/photo3.jpg"]
+        }
     }
 
-    if data in plans_config:
-        info = plans_config[data]
-        send_media_or_text(chat_id, info["text"], info["file"], get_back_keyboard())
+    if data in products:
+        prod = products[data]
+        send_product_details(
+            chat_id, 
+            prod["name"], 
+            prod["price"], 
+            prod["validity"], 
+            prod["desc"], 
+            prod["videos"], 
+            prod["photos"]
+        )
+
+    elif data == "how_to_use":
+        bot.send_message(
+            chat_id, 
+            "📖 **How to Use Guide**\n\n1. Kisi bhi plan par click karein.\n2. Screen par aae '💳 Buy Now' button par click karke Admin ko contact karein.", 
+            reply_markup=get_product_buy_keyboard()
+        )
 
     elif data == "report_issue":
-        msg = bot.send_message(chat_id, "📝 **Apni complaint / issue yahan type karke bhejien:**\n\n(Aap photo, video ya text bhej sakte hain)")
+        msg = bot.send_message(chat_id, "📝 **Apni complaint / issue yahan bhejien (Message/Photo/Video):**")
         bot.register_next_step_handler(msg, process_user_complaint)
 
     elif data == "back":
         user_name = call.from_user.first_name
-        welcome_text = f"👋 Hello, {user_name}!\n\nChoose a plan to get started:"
-        send_media_or_text(chat_id, welcome_text, "videos/video1.mp4", get_main_keyboard())
+        welcome_text = f"👋 Hello, **{user_name}**!\n\nChoose a plan from below to get started:"
+        if os.path.exists("videos/video1.mp4"):
+            with open("videos/video1.mp4", "rb") as vid:
+                bot.send_video(chat_id, vid, caption=welcome_text, reply_markup=get_main_keyboard())
+        else:
+            bot.send_message(chat_id, welcome_text, reply_markup=get_main_keyboard())
 
+# Direct Complaint Forwarder to Admin
 def process_user_complaint(message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
@@ -176,15 +261,12 @@ def process_user_complaint(message):
     )
     
     try:
-        # Step 1: Send Header Info to Admin
         bot.send_message(ADMIN_ID, admin_notification)
-        # Step 2: Forward exact media/photo/video/text to Admin
         bot.copy_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id)
-        # Step 3: Send Confirmation to User
-        bot.send_message(message.chat.id, "✅ **Aapki complaint Admin ko bhej di gayi hai!**\nJald hi aapko response mil jayega.", reply_markup=get_back_keyboard())
+        bot.send_message(message.chat.id, "✅ **Aapki complaint Admin ko bhej di gayi hai!**", reply_markup=get_product_buy_keyboard())
     except Exception as e:
         print(f"Complaint Error: {e}")
-        bot.send_message(message.chat.id, "⚠️ Complaint bhejne mein error aaya. Kripya Admin se direct chat karein.", reply_markup=get_back_keyboard())
+        bot.send_message(message.chat.id, "⚠️ Complaint nahi bhej sake. Admin se direct contact karein.", reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
 # BOT STARTUP
