@@ -245,7 +245,7 @@ def send_payment_qr(chat_id, plan_info):
         )
 
 # ---------------------------------------------------------
-# UNIQUE & REDESIGNED PLAN DETAILS
+# UNIQUE PLAN DETAILS
 # ---------------------------------------------------------
 sections = {
     "p1": {
@@ -531,7 +531,7 @@ def process_user_complaint(message):
         bot.send_message(message.chat.id, "⚠️ Complaint error. Direct Admin se contact karein.", reply_markup=get_product_buy_keyboard("p1"))
 
 # ---------------------------------------------------------
-# BOT STARTUP & RECONNECT LOOP (FIXED SYNTAX)
+# BOT STARTUP & RECONNECT LOOP
 # ---------------------------------------------------------
 if __name__ == '__main__':
     keep_alive()
@@ -544,4 +544,5 @@ if __name__ == '__main__':
 
     while True:
         try:
-            bot.polling(non_stop=True, interval
+            bot.polling(non_stop=True, interval=0, timeout=20)
+        exce
