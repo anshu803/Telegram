@@ -122,7 +122,7 @@ def send_start_sequence(chat_id, user_name):
             logging.error(f"Start Media Group Error: {e}")
 
     # Step 2: Quality Text Message
-    bot.send_message(chat_id, "✨ **🎉 Welcome to VIP Access Bot!
+    bot.send_message(chat_id, "✨ 🎉 Welcome to VIP Access Bot!
 
 ✨ Get exclusive access to premium content
 💰 Affordable plans starting at just ₹99
@@ -134,10 +134,10 @@ def send_start_sequence(chat_id, user_name):
 ✨  25000+ Rp videos 
 ✨  M0m S0n 5k Videos
 
-✨ TRY OUR ANY PLAN FOR CHECKING THE QUALITY ✨** ✨")
+✨ TRY OUR ANY PLAN FOR CHECKING THE QUALITY ✨ ✨")
     
     # Step 3: Welcome Message with Main Buttons
-    welcome_msg = f"👋 Hello, **{user_name}**!\n\nChoose a plan to get started:"
+    welcome_msg = f"👋 Hello, 🦋💸**{user_name}**!\n\nChoose a plan to get started:"
     bot.send_message(chat_id, welcome_msg, reply_markup=get_main_keyboard())
 
 # ---------------------------------------------------------
@@ -335,4 +335,3 @@ if __name__ == '__main__':
         except Exception as e:
             logging.error(f"Polling crash prevented: {e}")
             time.sleep(3)
-    
