@@ -63,14 +63,14 @@ def get_main_keyboard():
     
     markup.add(
         InlineKeyboardButton("💦 𝐑𝐞𝐚𝐥 𝐈𝐧𝐝𝐢𝐚𝐧 𝐃ē𝐬𝐢 𝐏𝐨𝐫𝐧 1 — ₹69 / 30d", callback_data="p1"),
-        InlineKeyboardButton("🌽 PLAN 2 — ₹79 / 30d", callback_data="p2"),
-        InlineKeyboardButton("✨ PLAN 3 — ₹96 / 30d", callback_data="p3"),
-        InlineKeyboardButton("✨ OFFER ✨ — ₹155 / 30d", callback_data="p4"),
-        InlineKeyboardButton("😋 BEST OFFER 🥳 — ₹89 / 365d", callback_data="p5"),
-        InlineKeyboardButton("🥵 PLAN 6 🥵 — ₹111 / 60d", callback_data="p6"),
-        InlineKeyboardButton("😳 PLAN 7 🥵 — ₹129 / 60d", callback_data="p7"),
-        InlineKeyboardButton("🔞 PAID PACK 🥵 — ₹88 / 30d", callback_data="p8"),
-        InlineKeyboardButton("😍 VIP VIDEO 🔴 — ₹277 / 365d", callback_data="p10")
+        InlineKeyboardButton("🌽 CHlL CORN 2 — ₹79 / 30d", callback_data="p2"),
+        InlineKeyboardButton("✨ C0RE R@PE 3 — ₹96 / 30d", callback_data="p3"),
+        InlineKeyboardButton("✨ ALL VIDEO VIP MEMBER ✨ — ₹155 / 30d", callback_data="p4"),
+        InlineKeyboardButton("🤤 BHAI BHEN HOT 🤤 — ₹89 / 365d", callback_data="p5"),
+        InlineKeyboardButton("🥵 HOT DESI BHABHI 6 🥵 — ₹111 / 60d", callback_data="p6"),
+        InlineKeyboardButton("😳 INFLUENCER 50%-OFF 🥵 — ₹129 / 60d", callback_data="p7"),
+        InlineKeyboardButton("🔞 BAA BETl 🥵 — ₹88 / 30d", callback_data="p8"),
+        InlineKeyboardButton(" VVIP PLAN 1 LAKH VIDEO 😍 — ₹277 / 365d", callback_data="p10")
     )
     
     markup.row(
@@ -125,7 +125,7 @@ def send_start_sequence(chat_id, user_name):
     bot.send_message(chat_id, "✨ **TRY OUR ANY PLAN FOR CHECKING THE QUALITY** ✨")
     
     # Step 3: Welcome Message with Main Buttons
-    welcome_msg = f"👋 Hello, 🦋💸**{user_name}**!\n\nChoose a plan to get started:"
+    welcome_msg = f"👋 Hello, **{user_name}**!\n\nChoose a plan to get started:"
     bot.send_message(chat_id, welcome_msg, reply_markup=get_main_keyboard())
 
 # ---------------------------------------------------------
