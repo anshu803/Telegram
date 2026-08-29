@@ -68,7 +68,8 @@ def get_main_keyboard():
     markup.add(InlineKeyboardButton("PLAN 6 — ₹111 / 60d", callback_data="p6"))
     markup.add(InlineKeyboardButton("PLAN 7 — ₹129 / 60d", callback_data="p7"))
     markup.add(InlineKeyboardButton("PAID PACK — ₹88 / 30d", callback_data="p8"))
-    markup.add(InlineKeyboardButton("VIP VIDEO — ₹277 / 365d", callback_data="p9"))
+    markup.add(InlineKeyboardButton("PLAN 9 — ₹111 / 60d", callback_data="p9"))
+    markup.add(InlineKeyboardButton("VIP VIDEO — ₹277 / 365d", callback_data="p10"))
     
     btn_how = InlineKeyboardButton("📖 How to Use", callback_data="how_to_use")
     btn_report = InlineKeyboardButton("🚨 Report Issue", callback_data="report_issue")
@@ -84,37 +85,48 @@ def get_product_buy_keyboard():
     return markup
 
 # ---------------------------------------------------------
-# HAR PRODUCT KE LIYE ALAG MEDIA ALBUM SENDER
+# DYNAMIC MEDIA SENDER (Single/Multi-Media Grid Support)
 # ---------------------------------------------------------
-def send_product_details(chat_id, plan_title, price, validity, desc, video_list, photo_list):
-    media = []
-    
-    # 1. Product specific Videos
-    for v_path in video_list:
-        if os.path.exists(v_path):
-            media.append(InputMediaVideo(open(v_path, 'rb')))
-
-    # 2. Product specific Photos
-    for p_path in photo_list:
-        if os.path.exists(p_path):
-            media.append(InputMediaPhoto(open(p_path, 'rb')))
-
-    # Caption (Bilkul aapke screenshot wale design par)
+def send_section_content(chat_id, plan_title, price, validity, desc, media_files):
     caption_text = (
         f"{desc}\n\n"
         f"📦 **{plan_title}** 😍\n"
         f"💰 **Price: ₹{price}** | ⏳ **{validity}**"
     )
 
-    # Step A: Album Media Grid Send Karo
-    if media:
-        try:
-            bot.send_media_group(chat_id, media)
-        except Exception as e:
-            print(f"Media send error: {e}")
+    valid_media = []
+    for f_path in media_files:
+        if os.path.exists(f_path):
+            if f_path.endswith(('.mp4', '.mkv', '.mov')):
+                valid_media.append(InputMediaVideo(open(f_path, 'rb')))
+            elif f_path.endswith(('.jpg', '.jpeg', '.png')):
+                valid_media.append(InputMediaPhoto(open(f_path, 'rb')))
 
-    # Step B: Direct Text + Buy Now / Back Buttons Send Karo
-    bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
+    # Case 1: Multiple Media Files -> Send Grid Album
+    if len(valid_media) > 1:
+        try:
+            bot.send_media_group(chat_id, valid_media)
+        except Exception as e:
+            print(f"Media group error: {e}")
+        bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
+
+    # Case 2: Single Media File -> Send Direct Video/Photo with Caption & Buttons
+    elif len(valid_media) == 1:
+        single_path = media_files[0]
+        try:
+            if single_path.endswith(('.mp4', '.mkv', '.mov')):
+                with open(single_path, 'rb') as v:
+                    bot.send_video(chat_id, v, caption=caption_text, reply_markup=get_product_buy_keyboard())
+            else:
+                with open(single_path, 'rb') as p:
+                    bot.send_photo(chat_id, p, caption=caption_text, reply_markup=get_product_buy_keyboard())
+        except Exception as e:
+            print(f"Single media send error: {e}")
+            bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
+
+    # Case 3: Fallback Text Message
+    else:
+        bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
 # BOT HANDLERS
@@ -157,85 +169,80 @@ def callback_handler(call):
     data = call.data
     bot.answer_callback_query(call.id)
 
-    # HAR BUTTON (PRODUCT) KA APNA ALAG SYSTEM CONFIGURATION
-    products = {
-        "p1": {
+    # 1 SE 10 SECTIONS KA EXACT CONFIGURATION
+    sections = {
+        "p1": { # Section 1 (Screenshot 1 & 10)
             "name": "PLAN 1 PACK", "price": "69", "validity": "30 Days",
-            "desc": "PERMANENT VVIP GROUP YOU WILL GET ALL VIRAL AND PREMIUM CONTENT",
-            "videos": ["videos/video1.mp4", "videos/video2.mp4"],
-            "photos": ["videos/photo1.jpg"]
+            "desc": "PERMANENT VVIP GROUP ACCESS",
+            "media": ["videos/video1.mp4", "videos/photo1.jpg"]
         },
-        "p2": {
+        "p2": { # Section 2 (Screenshot 3)
             "name": "PLAN 2 PACK", "price": "79", "validity": "30 Days",
-            "desc": "FULL HD EXCLUSIVE MEDIA PACK",
-            "videos": ["videos/video2.mp4", "videos/video3.mp4"],
-            "photos": ["videos/photo2.jpg"]
+            "desc": "HOT DESI VVIP PACK",
+            "media": ["videos/video2.mp4", "videos/photo2.jpg"]
         },
-        "p3": {
+        "p3": { # Section 3 (Screenshot 1)
             "name": "PLAN 3 PACK", "price": "96", "validity": "30 Days",
-            "desc": "TOP TRENDING PREMIUM LINKS COLLECTION",
-            "videos": ["videos/video3.mp4", "videos/video4.mp4"],
-            "photos": ["videos/photo3.jpg"]
+            "desc": "PREMIUM EXCLUSIVE ACCESS",
+            "media": ["videos/video3.mp4", "videos/photo3.jpg"]
         },
-        "p4": {
+        "p4": { # Section 4 (Screenshot 4)
             "name": "OFFER PACK ✨", "price": "155", "validity": "30 Days",
-            "desc": "SPECIAL DISCOUNT OFFER WITH EXTRA MEDIA ACCESS",
-            "videos": ["videos/video4.mp4", "videos/video5.mp4"],
-            "photos": ["videos/photo4.jpg"]
+            "desc": "SPECIAL DISCOUNT OFFER WITH FULL MEDIA",
+            "media": ["videos/video4.mp4", "videos/photo4.jpg"]
         },
-        "p5": {
-            "name": "BEST YEARLY OFFER 🥳", "price": "89", "validity": "365 Days",
-            "desc": "1 YEAR FULL UNLIMITED ACCESS PACK",
-            "videos": ["videos/video5.mp4", "videos/video6.mp4"],
-            "photos": ["videos/photo5.jpg"]
+        "p5": { # Section 5
+            "name": "BEST OFFER 🥳", "price": "89", "validity": "365 Days",
+            "desc": "1 YEAR UNLIMITED VIP ACCESS",
+            "media": ["videos/video5.mp4", "videos/photo5.jpg"]
         },
-        "p6": {
+        "p6": { # Section 6 (Screenshot 5 & 6)
             "name": "PLAN 6 PACK", "price": "111", "validity": "60 Days",
-            "desc": "60 DAYS UNLIMITED VVIP LINKS",
-            "videos": ["videos/video6.mp4", "videos/video7.mp4"],
-            "photos": ["videos/photo6.jpg"]
+            "desc": "60 DAYS FULL VVIP PACK",
+            "media": ["videos/video6.mp4", "videos/photo6.jpg"]
         },
-        "p7": {
+        "p7": { # Section 7
             "name": "PLAN 7 PACK", "price": "129", "validity": "60 Days",
-            "desc": "SUPER PREMIUM CONTENT PACK",
-            "videos": ["videos/video7.mp4", "videos/video8.mp4"],
-            "photos": ["videos/photo7.jpg"]
+            "desc": "INFLUENCER 50% OFF PACK",
+            "media": ["videos/video7.mp4", "videos/photo7.jpg"]
         },
-        "p8": {
+        "p8": { # Section 8 (Screenshot 7)
             "name": "PAID PACK", "price": "88", "validity": "30 Days",
-            "desc": "EXCLUSIVE PAID VVIP GROUP LINKS",
-            "videos": ["videos/video8.mp4", "videos/video9.mp4"],
-            "photos": ["videos/photo1.jpg"]
+            "desc": "BAAP BETI VVIP SPECIAL PACK",
+            "media": ["videos/video8.mp4", "videos/photo1.jpg"]
         },
-        "p9": {
-            "name": "VVIP PLAN 1 LAKH VIDEO 🍿", "price": "277", "validity": "365 Days",
+        "p9": { # Section 9 (Screenshot 8)
+            "name": "PLAN 9 PACK", "price": "111", "validity": "60 Days",
+            "desc": "SUPER VIP ACCESS PACK",
+            "media": ["videos/video9.mp4", "videos/photo2.jpg"]
+        },
+        "p10": { # Section 10 (Screenshot 9 & 2)
+            "name": "VVIP PLAN 1 LAKH VIDEO", "price": "277", "validity": "365 Days",
             "desc": "PERMANENT VVIP GROUP YOU WILL GET 10 GROUP LINKS ALL VIRAL AND PREMIUM GROUP WORTH IT JUST BUY 🥵💦",
-            "videos": ["videos/video1.mp4", "videos/video2.mp4", "videos/video3.mp4"],
-            "photos": ["videos/photo1.jpg", "videos/photo2.jpg", "videos/photo3.jpg"]
+            "media": ["videos/video1.mp4", "videos/video2.mp4", "videos/photo3.jpg"]
         }
     }
 
-    if data in products:
-        prod = products[data]
-        send_product_details(
+    if data in sections:
+        sec = sections[data]
+        send_section_content(
             chat_id, 
-            prod["name"], 
-            prod["price"], 
-            prod["validity"], 
-            prod["desc"], 
-            prod["videos"], 
-            prod["photos"]
+            sec["name"], 
+            sec["price"], 
+            sec["validity"], 
+            sec["desc"], 
+            sec["media"]
         )
 
     elif data == "how_to_use":
         bot.send_message(
             chat_id, 
-            "📖 **How to Use Guide**\n\n1. Kisi bhi plan par click karein.\n2. Screen par aae '💳 Buy Now' button par click karke Admin ko contact karein.", 
+            "📖 **How to Use Guide**\n\n1. Select any plan.\n2. Click '💳 Buy Now' to contact Admin.", 
             reply_markup=get_product_buy_keyboard()
         )
 
     elif data == "report_issue":
-        msg = bot.send_message(chat_id, "📝 **Apni complaint / issue yahan bhejien (Message/Photo/Video):**")
+        msg = bot.send_message(chat_id, "📝 **Apni complaint yahan bhejien (Text/Photo/Video):**")
         bot.register_next_step_handler(msg, process_user_complaint)
 
     elif data == "back":
@@ -266,7 +273,7 @@ def process_user_complaint(message):
         bot.send_message(message.chat.id, "✅ **Aapki complaint Admin ko bhej di gayi hai!**", reply_markup=get_product_buy_keyboard())
     except Exception as e:
         print(f"Complaint Error: {e}")
-        bot.send_message(message.chat.id, "⚠️ Complaint nahi bhej sake. Admin se direct contact karein.", reply_markup=get_product_buy_keyboard())
+        bot.send_message(message.chat.id, "⚠️ Complaint error. Direct Admin se contact karein.", reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
 # BOT STARTUP
