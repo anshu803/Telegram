@@ -1,15 +1,18 @@
 import os
+import logging
 from threading import Thread
 from flask import Flask
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaVideo, BotCommand
 
-# Flask Server (Render Service Alive Rakhne Ke Liye)
+logging.basicConfig(level=logging.INFO)
+
+# Flask Server (Render Uptime Support)
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "Bot Alive"
+    return "Bot is running online!"
 
 def keep_alive():
     port = int(os.environ.get("PORT", 8080))
@@ -17,133 +20,183 @@ def keep_alive():
     t.daemon = True
     t.start()
 
-# Bot Token & Admin ID Setup
+# Environment Variables
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
-ADMIN_ID = os.environ.get("ADMIN_ID", "123456789")
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Main Keyboard Structure (Pricing & Unique Names Ke Sath)
+# User list storage for broadcast
+users_list = set()
+
+# Side Menu Bar Commands Setup
+try:
+    bot.set_my_commands([
+        BotCommand("start", "Start Bot Menu"),
+        BotCommand("broadcast", "Send Broadcast (Admin Only)")
+    ])
+except Exception as e:
+    print(f"Command set error: {e}")
+
+# Main Keyboard Structure
 def get_main_keyboard():
     markup = InlineKeyboardMarkup()
     
-    # 10 Vertical Buttons (Har button ka alag naam aur pricing)
-    markup.add(InlineKeyboardButton("🎬 VIP Movie Plan - ₹199", callback_data="b1"))
-    markup.add(InlineKeyboardButton("📊 Trading Signals - ₹499", callback_data="b2"))
-    markup.add(InlineKeyboardButton("📘 Premium Course - ₹299", callback_data="b3"))
-    markup.add(InlineKeyboardButton("🛠️ Pro Software Pack - ₹399", callback_data="b4"))
-    markup.add(InlineKeyboardButton("👑 Private Channel Access - ₹999", callback_data="b5"))
-    markup.add(InlineKeyboardButton("🎁 Special Combo Offer - ₹599", callback_data="b6"))
-    markup.add(InlineKeyboardButton("🚀 AI Tools Access - ₹349", callback_data="b7"))
-    markup.add(InlineKeyboardButton("👥 Referral Program - Free", callback_data="b8"))
-    markup.add(InlineKeyboardButton("🔥 Lifetime Membership - ₹1499", callback_data="b9"))
-    markup.add(InlineKeyboardButton("💎 Exclusive VIP Pack - ₹1999", callback_data="b10"))
+    # 10 Vertical Buttons (Custom Names & Pricing)
+    markup.add(InlineKeyboardButton("VIP Movie Plan - ₹199", callback_data="b1"))
+    markup.add(InlineKeyboardButton("Trading Signals - ₹499", callback_data="b2"))
+    markup.add(InlineKeyboardButton("Premium Course - ₹299", callback_data="b3"))
+    markup.add(InlineKeyboardButton("Pro Software Pack - ₹399", callback_data="b4"))
+    markup.add(InlineKeyboardButton("Private Channel Access - ₹999", callback_data="b5"))
+    markup.add(InlineKeyboardButton("Special Combo Offer - ₹599", callback_data="b6"))
+    markup.add(InlineKeyboardButton("AI Tools Access - ₹349", callback_data="b7"))
+    markup.add(InlineKeyboardButton("Referral Program - Free", callback_data="b8"))
+    markup.add(InlineKeyboardButton("Lifetime Membership - ₹1499", callback_data="b9"))
+    markup.add(InlineKeyboardButton("Exclusive VIP Pack - ₹1999", callback_data="b10"))
     
-    # Last Row: Left (Help) & Right (Admin) Side-by-Side
-    btn_help = InlineKeyboardButton("ℹ️ Help", callback_data="help")
-    btn_admin = InlineKeyboardButton("📩 Admin", url=f"tg://user?id={ADMIN_ID}")
+    # Bottom Row: Help (Left) & Admin (Right)
+    btn_help = InlineKeyboardButton("Help", callback_data="help")
+    btn_admin = InlineKeyboardButton("Admin", url=f"tg://user?id={ADMIN_ID}")
     markup.row(btn_help, btn_admin)
-    
     return markup
 
 # Back Button
 def get_back_keyboard():
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="back"))
+    markup.add(InlineKeyboardButton("Back to Main Menu", callback_data="back"))
     return markup
 
-# /start Command Handler (Seedhe Welcome Message Aayega)
+# Helper: 3 Videos Ek Sath (Album Format) Send karne ke liye
+def send_3_videos_group(chat_id, v1_path, v2_path, v3_path, caption_text):
+    paths = [v1_path, v2_path, v3_path]
+    files_to_close = []
+    media_group = []
+
+    for index, path in enumerate(paths):
+        if os.path.exists(path):
+            f = open(path, 'rb')
+            files_to_close.append(f)
+            cap = caption_text if index == 0 else ""
+            media_group.append(InputMediaVideo(f, caption=cap, parse_mode="Markdown"))
+
+    if media_group:
+        bot.send_media_group(chat_id, media_group)
+        for f in files_to_close:
+            f.close()
+        bot.send_message(chat_id, "Wapas jane ke liye button dabayein:", reply_markup=get_back_keyboard())
+    else:
+        bot.send_message(
+            chat_id, 
+            f"{caption_text}\n\n*(Note: Videos missing hain folder me)*", 
+            parse_mode="Markdown", 
+            reply_markup=get_back_keyboard()
+        )
+
+# /start Command Handler
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
+    users_list.add(message.chat.id)
     user_name = message.from_user.first_name
     user_id = message.from_user.id
-    
-    welcome_msg = (
-        f"Hello [{user_name}](tg://user?id={user_id})!\n\n"
-        "Aapka hamare Premium Bot mein swagat hai.\n"
-        "Kripya niche diye gaye plans mein se apna option chunhein:"
+
+    intro_caption = (
+        f"**Welcome to Premium Bot!**\n\n"
+        f"Hello [{user_name}](tg://user?id={user_id})!\n"
+        "Ye aapke liye intro videos hain."
     )
+
+    # 1. Pehle 3 Videos ek sath aayengi
+    send_3_videos_group(
+        message.chat.id, 
+        "videos/start1.mp4", 
+        "videos/start2.mp4", 
+        "videos/start3.mp4", 
+        intro_caption
+    )
+
+    # 2. Phir Text Message aur Saare Buttons
+    welcome_msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nNiche diye gaye options me se chunhein:"
     bot.send_message(message.chat.id, welcome_msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
-# Video Send Karne Ka Helper Function (Video + Caption Text)
-def send_button_video(chat_id, video_path, text_caption):
-    if os.path.exists(video_path):
-        with open(video_path, 'rb') as v:
-            bot.send_video(chat_id, v, caption=text_caption, parse_mode="Markdown", reply_markup=get_back_keyboard())
-    else:
-        # Agar video folder mein nahi milli toh text message bhejega
-        error_text = f"{text_caption}\n\n*(Note: Video file `{video_path}` missing hai, kripya videos folder mein dalein)*"
-        bot.send_message(chat_id, error_text, parse_mode="Markdown", reply_markup=get_back_keyboard())
+# /broadcast Command Handler (Admin Side-Menu Feature)
+@bot.message_handler(commands=['broadcast'])
+def broadcast_cmd(message):
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "Aap Admin nahi hain!")
+        return
 
-# Button Click Callback Handler
+    msg = bot.reply_to(message, "Broadcast ke liye text, photo ya video message bhein:")
+    bot.register_next_step_handler(msg, process_broadcast)
+
+def process_broadcast(message):
+    count = 0
+    for user_id in users_list:
+        try:
+            bot.copy_message(chat_id=user_id, from_chat_id=message.chat.id, message_id=message.message_id)
+            count += 1
+        except Exception:
+            pass
+    bot.send_message(message.chat.id, f"Broadcast successfully {count} users ko bhej diya gaya!")
+
+# Button Click Handling
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
     data = call.data
     bot.answer_callback_query(call.id)
 
-    # Button 1 Response
+    # Har Button Click par 3 Videos Ek Sath (Media Group)
     if data == "b1":
-        caption = "🎬 *VIP Movie Plan (Pricing: ₹199)*\n\nIs plan mein aapko latest HD movies aur series ka instant download link milega."
-        send_button_video(chat_id, "videos/video1.mp4", caption)
+        cap = "*VIP Movie Plan (Pricing: ₹199)*\n\nVIP Movie Content Preview."
+        send_3_videos_group(chat_id, "videos/b1_1.mp4", "videos/b1_2.mp4", "videos/b1_3.mp4", cap)
 
-    # Button 2 Response
     elif data == "b2":
-        caption = "📊 *Trading Signals Plan (Pricing: ₹499)*\n\nDaily 95%+ accurate Crypto aur Forex trading signals paane ke liye ye plan lein."
-        send_button_video(chat_id, "videos/video2.mp4", caption)
+        cap = "*Trading Signals (Pricing: ₹499)*\n\nVIP Trading Signals Demo."
+        send_3_videos_group(chat_id, "videos/b2_1.mp4", "videos/b2_2.mp4", "videos/b2_3.mp4", cap)
 
-    # Button 3 Response
     elif data == "b3":
-        caption = "📘 *Premium Course (Pricing: ₹299)*\n\nIs course mein aapko basic se advance tak full video classes milengi."
-        send_button_video(chat_id, "videos/video3.mp4", caption)
+        cap = "*Premium Course (Pricing: ₹299)*\n\nCourse Details Video."
+        send_3_videos_group(chat_id, "videos/b3_1.mp4", "videos/b3_2.mp4", "videos/b3_3.mp4", cap)
 
-    # Button 4 Response
     elif data == "b4":
-        caption = "🛠️ *Pro Software Pack (Pricing: ₹399)*\n\nIsme Android aur PC ke sabhi unlocked premium tools milenge."
-        send_button_video(chat_id, "videos/video4.mp4", caption)
+        cap = "*Pro Software Pack (Pricing: ₹399)*\n\nSoftware Previews."
+        send_3_videos_group(chat_id, "videos/b4_1.mp4", "videos/b4_2.mp4", "videos/b4_3.mp4", cap)
 
-    # Button 5 Response
     elif data == "b5":
-        caption = "👑 *Private Channel Access (Pricing: ₹999)*\n\nHamare private VIP channel ki 1-Month membership."
-        send_button_video(chat_id, "videos/video5.mp4", caption)
+        cap = "*Private Channel Access (Pricing: ₹999)*\n\nChannel Membership Info."
+        send_3_videos_group(chat_id, "videos/b5_1.mp4", "videos/b5_2.mp4", "videos/b5_3.mp4", cap)
 
-    # Button 6 Response
     elif data == "b6":
-        caption = "🎁 *Special Combo Offer (Pricing: ₹599)*\n\nMovies + Software + Courses sabhi ek hi pack mein."
-        send_button_video(chat_id, "videos/video6.mp4", caption)
+        cap = "*Special Combo Offer (Pricing: ₹599)*\n\nCombo Offer Demos."
+        send_3_videos_group(chat_id, "videos/b6_1.mp4", "videos/b6_2.mp4", "videos/b6_3.mp4", cap)
 
-    # Button 7 Response
     elif data == "b7":
-        caption = "🚀 *AI Tools Access (Pricing: ₹349)*\n\nBest ChatGPT aur image generation AI tools ka full access."
-        send_button_video(chat_id, "videos/video7.mp4", caption)
+        cap = "*AI Tools Access (Pricing: ₹349)*\n\nAI Pack Videos."
+        send_3_videos_group(chat_id, "videos/b7_1.mp4", "videos/b7_2.mp4", "videos/b7_3.mp4", cap)
 
-    # Button 8 Response
     elif data == "b8":
-        caption = "👥 *Referral Program (Pricing: FREE)*\n\nApne dosto ko link share karein aur har joining par commission payein."
-        send_button_video(chat_id, "videos/video8.mp4", caption)
+        cap = "*Referral Program (Pricing: FREE)*\n\nRefer & Earn Videos."
+        send_3_videos_group(chat_id, "videos/b8_1.mp4", "videos/b8_2.mp4", "videos/b8_3.mp4", cap)
 
-    # Button 9 Response
     elif data == "b9":
-        caption = "🔥 *Lifetime Membership (Pricing: ₹1499)*\n\nEk baar pay karein aur lifetime tak sabhi premium updates payein."
-        send_button_video(chat_id, "videos/video9.mp4", caption)
+        cap = "*Lifetime Membership (Pricing: ₹1499)*\n\nLifetime VIP Access."
+        send_3_videos_group(chat_id, "videos/b9_1.mp4", "videos/b9_2.mp4", "videos/b9_3.mp4", cap)
 
-    # Button 10 Response
     elif data == "b10":
-        caption = "💎 *Exclusive VIP Pack (Pricing: ₹1999)*\n\nAll-in-one VIP Access + Personal Admin Support."
-        send_button_video(chat_id, "videos/video10.mp4", caption)
+        cap = "*Exclusive VIP Pack (Pricing: ₹1999)*\n\nExclusive Content."
+        send_3_videos_group(chat_id, "videos/b10_1.mp4", "videos/b10_2.mp4", "videos/b10_3.mp4", cap)
 
-    # Help Action
     elif data == "help":
-        help_text = "ℹ️ *Help & Support*\n\nKisi bhi dikkat ya payment confirmation ke liye Admin se sampark karein."
+        help_text = "*Help & Support*\n\nAdmin se sampark karein."
         bot.send_message(chat_id, help_text, parse_mode="Markdown", reply_markup=get_back_keyboard())
 
-    # Back to Main Menu Action
     elif data == "back":
         user_name = call.from_user.first_name
         user_id = call.from_user.id
-        msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nKripya niche diye gaye plans mein se chunhein:"
+        msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nNiche diye gaye options me se chunhein:"
         bot.send_message(chat_id, msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
 if __name__ == '__main__':
     keep_alive()
-    bot.infinity_polling(skip_pending=True)
+    # Safe polling mode fix for Python 3.14/Render
+    bot.polling(non_stop=True, skip_pending=True)
