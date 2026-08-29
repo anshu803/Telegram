@@ -7,12 +7,12 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 
 logging.basicConfig(level=logging.INFO)
 
-# Render Web Service / UptimeRobot Ping Setup
+# Render Web Service & UptimeRobot Ping Endpoint
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot Service Online"
+    return "Bot Web Service Online"
 
 @app.route('/ping')
 def ping():
@@ -27,6 +27,7 @@ def keep_alive():
     t.daemon = True
     t.start()
 
+# Tokens Setup
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
 
@@ -42,41 +43,32 @@ try:
 except Exception as e:
     print(f"Commands error: {e}")
 
-# Main Keyboard Structure
+# Exact Screenshot Keyboard Design
 def get_main_keyboard():
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("VIP Movie Plan - ₹199", callback_data="b1"))
-    markup.add(InlineKeyboardButton("Trading Signals - ₹499", callback_data="b2"))
-    markup.add(InlineKeyboardButton("Premium Course - ₹299", callback_data="b3"))
-    markup.add(InlineKeyboardButton("Pro Software Pack - ₹399", callback_data="b4"))
-    markup.add(InlineKeyboardButton("Private Channel Access - ₹999", callback_data="b5"))
-    markup.add(InlineKeyboardButton("Special Combo Offer - ₹599", callback_data="b6"))
-    markup.add(InlineKeyboardButton("AI Tools Access - ₹349", callback_data="b7"))
-    markup.add(InlineKeyboardButton("Referral Program - Free", callback_data="b8"))
-    markup.add(InlineKeyboardButton("Lifetime Membership - ₹1499", callback_data="b9"))
-    markup.add(InlineKeyboardButton("Exclusive VIP Pack - ₹1999", callback_data="b10"))
     
-    # Bottom Row: Help (Left) & Admin (Right)
-    btn_help = InlineKeyboardButton("Help", callback_data="help")
-    btn_admin = InlineKeyboardButton("Admin", url=f"tg://user?id={ADMIN_ID}")
-    markup.row(btn_help, btn_admin)
+    # Plans as shown in screenshot with exact prices
+    markup.add(InlineKeyboardButton("PLAN 1 — ₹69 / 30d", callback_data="p1"))
+    markup.add(InlineKeyboardButton("PLAN 2 — ₹79 / 30d", callback_data="p2"))
+    markup.add(InlineKeyboardButton("PLAN 3 — ₹96 / 30d", callback_data="p3"))
+    markup.add(InlineKeyboardButton("OFFER ✨ — ₹155 / 30d", callback_data="p4"))
+    markup.add(InlineKeyboardButton("BEST OFFER 🥳 — ₹89 / 365d", callback_data="p5"))
+    markup.add(InlineKeyboardButton("PLAN 6 — ₹111 / 60d", callback_data="p6"))
+    markup.add(InlineKeyboardButton("PLAN 7 — ₹129 / 60d", callback_data="p7"))
+    markup.add(InlineKeyboardButton("PAID PACK — ₹88 / 30d", callback_data="p8"))
+    markup.add(InlineKeyboardButton("VIP VIDEO — ₹277 / 365d", callback_data="p9"))
+    
+    # Bottom Row Buttons (Screenshot design)
+    btn_how = InlineKeyboardButton("📖 How to Use", callback_data="how_to_use")
+    btn_report = InlineKeyboardButton("🚨 Report Issue", url=f"tg://user?id={ADMIN_ID}")
+    markup.row(btn_how, btn_report)
     return markup
 
+# Back Button Keyboard
 def get_back_keyboard():
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("Back to Main Menu", callback_data="back"))
+    markup.add(InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="back"))
     return markup
-
-# Safe Video Handler (Render storage full nahi hogi, fail hone par silent skip karega)
-def try_send_video(chat_id, file_path_or_id):
-    try:
-        if os.path.exists(file_path_or_id):
-            with open(file_path_or_id, 'rb') as f:
-                bot.send_video(chat_id, f)
-        elif isinstance(file_path_or_id, str) and len(file_path_or_id) > 10:
-            bot.send_video(chat_id, file_path_or_id)
-    except Exception as e:
-        print(f"Video skipped safely: {e}")
 
 # /start Command Handler
 @bot.message_handler(commands=['start'])
@@ -85,16 +77,18 @@ def start_cmd(message):
     user_name = message.from_user.first_name
     user_id = message.from_user.id
 
-    # STEP 1: BUTTONS & WELCOME TEXT FIRST (Instant Response Guaranteed!)
+    # Exact Greeting Text as Screenshot
     welcome_text = (
-        f"🔥 **Welcome to Premium Bot!**\n\n"
-        f"Hello [{user_name}](tg://user?id={user_id})!\n\n"
-        f"Niche diye gaye buttons mein se apna plan chunhein:"
+        f"👋 Hello, [{user_name}](tg://user?id={user_id})!\n\n"
+        f"Choose a plan to get started:"
     )
-    bot.send_message(message.chat.id, welcome_text, reply_markup=get_main_keyboard(), parse_mode="Markdown")
-
-    # STEP 2: TRY SENDING INTRO VIDEO IN BACKGROUND (If available)
-    try_send_video(message.chat.id, "video1.mp4")
+    
+    bot.send_message(
+        message.chat.id, 
+        welcome_text, 
+        reply_markup=get_main_keyboard(), 
+        parse_mode="Markdown"
+    )
 
 # /broadcast Command Handler (Admin Only)
 @bot.message_handler(commands=['broadcast'])
@@ -116,29 +110,58 @@ def process_broadcast(message):
             pass
     bot.send_message(message.chat.id, f"✅ Broadcast successfully {count} users ko bhej diya gaya!")
 
-# Buttons Callback Handler
+# Callback Button Click Handling
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
     data = call.data
     bot.answer_callback_query(call.id)
 
-    if data.startswith("b"):
-        # Plan message with Back Button
-        msg_text = f"✅ Aapne **{data.upper()}** select kiya hai.\n\nIs plan ki details niche hain:"
-        bot.send_message(chat_id, msg_text, parse_mode="Markdown", reply_markup=get_back_keyboard())
-        
-        # Try sending sample video for button (if exists in root)
-        try_send_video(chat_id, "video2.mp4")
+    # Button Response Details
+    if data == "p1":
+        msg = "💎 **PLAN 1 Details**\n\nPrice: ₹69\nValidity: 30 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
 
-    elif data == "help":
-        help_text = "*Help & Support*\n\nKisi bhi sahayata ke liye Admin se sampark karein."
-        bot.send_message(chat_id, help_text, parse_mode="Markdown", reply_markup=get_back_keyboard())
+    elif data == "p2":
+        msg = "💎 **PLAN 2 Details**\n\nPrice: ₹79\nValidity: 30 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p3":
+        msg = "💎 **PLAN 3 Details**\n\nPrice: ₹96\nValidity: 30 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p4":
+        msg = "✨ **OFFER PLAN Details**\n\nPrice: ₹155\nValidity: 30 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p5":
+        msg = "🥳 **BEST OFFER PLAN Details**\n\nPrice: ₹89\nValidity: 365 Days (1 Year)\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p6":
+        msg = "💎 **PLAN 6 Details**\n\nPrice: ₹111\nValidity: 60 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p7":
+        msg = "💎 **PLAN 7 Details**\n\nPrice: ₹129\nValidity: 60 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p8":
+        msg = "💎 **PAID PACK Details**\n\nPrice: ₹88\nValidity: 30 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "p9":
+        msg = "💎 **VIP VIDEO PACK Details**\n\nPrice: ₹277\nValidity: 365 Days\n\nPayment ke liye Admin se sampark karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
+
+    elif data == "how_to_use":
+        msg = "📖 **How to Use Guide**\n\n1. Kisi bhi plan button par click karein.\n2. Access lene ke liye Admin button par click karein."
+        bot.send_message(chat_id, msg, parse_mode="Markdown", reply_markup=get_back_keyboard())
 
     elif data == "back":
         user_name = call.from_user.first_name
         user_id = call.from_user.id
-        msg = f"Hello [{user_name}](tg://user?id={user_id})!\n\nNiche diye gaye options mein se chunhein:"
+        msg = f"👋 Hello, [{user_name}](tg://user?id={user_id})!\n\nChoose a plan to get started:"
         bot.send_message(chat_id, msg, reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
 if __name__ == '__main__':
