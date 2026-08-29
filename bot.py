@@ -56,22 +56,21 @@ except Exception as e:
     logging.error(f"Commands setup error: {e}")
 
 # ---------------------------------------------------------
-# KEYBOARD LAYOUTS
+# EXACT KEYBOARD LAYOUT (Matching Screenshot 2)
 # ---------------------------------------------------------
 def get_main_keyboard():
     markup = InlineKeyboardMarkup(row_width=1)
     
     markup.add(
-        InlineKeyboardButton("PLAN 1 — ₹69 / 30d", callback_data="p1"),
-        InlineKeyboardButton("PLAN 2 — ₹79 / 30d", callback_data="p2"),
-        InlineKeyboardButton("PLAN 3 — ₹96 / 30d", callback_data="p3"),
-        InlineKeyboardButton("OFFER ✨ — ₹155 / 30d", callback_data="p4"),
-        InlineKeyboardButton("BEST OFFER 🥳 — ₹89 / 365d", callback_data="p5"),
-        InlineKeyboardButton("PLAN 6 — ₹111 / 60d", callback_data="p6"),
-        InlineKeyboardButton("PLAN 7 — ₹129 / 60d", callback_data="p7"),
-        InlineKeyboardButton("PAID PACK — ₹88 / 30d", callback_data="p8"),
-        InlineKeyboardButton("PLAN 9 — ₹111 / 60d", callback_data="p9"),
-        InlineKeyboardButton("VIP VIDEO — ₹277 / 365d", callback_data="p10")
+        InlineKeyboardButton("💦 PLAN 1 — ₹69 / 30d", callback_data="p1"),
+        InlineKeyboardButton("🌽 PLAN 2 — ₹79 / 30d", callback_data="p2"),
+        InlineKeyboardButton("✨ PLAN 3 — ₹96 / 30d", callback_data="p3"),
+        InlineKeyboardButton("✨ OFFER ✨ — ₹155 / 30d", callback_data="p4"),
+        InlineKeyboardButton("😋 BEST OFFER 🥳 — ₹89 / 365d", callback_data="p5"),
+        InlineKeyboardButton("🥵 PLAN 6 🥵 — ₹111 / 60d", callback_data="p6"),
+        InlineKeyboardButton("😳 PLAN 7 🥵 — ₹129 / 60d", callback_data="p7"),
+        InlineKeyboardButton("🔞 PAID PACK 🥵 — ₹88 / 30d", callback_data="p8"),
+        InlineKeyboardButton("😍 VIP VIDEO 🔴 — ₹277 / 365d", callback_data="p10")
     )
     
     markup.row(
@@ -89,7 +88,43 @@ def get_product_buy_keyboard():
     return markup
 
 # ---------------------------------------------------------
-# FAST DYNAMIC MEDIA SENDER
+# START FLOW (4 Videos + 1 Photo Media Grid + 2 Texts)
+# ---------------------------------------------------------
+def send_start_sequence(chat_id, user_name):
+    # 4 Videos + 1 Photo Media Array
+    start_media_files = [
+        "videos/video1.mp4",  # Video 1
+        "videos/photo1.jpg",  # Photo 1 (Middle)
+        "videos/video2.mp4",  # Video 2
+        "videos/video3.mp4",  # Video 3
+        "videos/video4.mp4"   # Video 4
+    ]
+    
+    album = []
+    for path in start_media_files:
+        if os.path.exists(path):
+            if path.endswith(('.mp4', '.mkv', '.mov')):
+                album.append(InputMediaVideo(open(path, 'rb'), supports_streaming=True))
+            elif path.endswith(('.jpg', '.jpeg', '.png')):
+                album.append(InputMediaPhoto(open(path, 'rb')))
+
+    # Step 1: Send Media Grid
+    if len(album) > 0:
+        try:
+            bot.send_media_group(chat_id, album)
+        except Exception as e:
+            logging.error(f"Start Media Album Error: {e}")
+            
+    # Step 2: Send Text Message
+    text_msg = "✨ **TRY OUR ANY PLAN FOR CHECKING THE QUALITY** ✨"
+    bot.send_message(chat_id, text_msg)
+    
+    # Step 3: Send Welcome Message with Main Buttons
+    welcome_msg = f"👋 Hello, 🦋💸**{user_name}**!\n\nChoose a plan to get started:"
+    bot.send_message(chat_id, welcome_msg, reply_markup=get_main_keyboard())
+
+# ---------------------------------------------------------
+# DYNAMIC SECTION SENDER
 # ---------------------------------------------------------
 def send_section_content(chat_id, plan_title, price, validity, desc, media_files):
     caption_text = (
@@ -139,19 +174,13 @@ def send_section_content(chat_id, plan_title, price, validity, desc, media_files
         bot.send_message(chat_id, caption_text, reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
-# HANDLERS
+# BOT HANDLERS
 # ---------------------------------------------------------
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
     users_list.add(message.chat.id)
     user_name = message.from_user.first_name
-    welcome_text = f"👋 Hello, **{user_name}**!\n\nChoose a plan from below to get started:"
-    
-    if os.path.exists("videos/video1.mp4"):
-        with open("videos/video1.mp4", "rb") as vid:
-            bot.send_video(message.chat.id, vid, caption=welcome_text, supports_streaming=True, reply_markup=get_main_keyboard())
-    else:
-        bot.send_message(message.chat.id, welcome_text, reply_markup=get_main_keyboard())
+    send_start_sequence(message.chat.id, user_name)
 
 @bot.message_handler(commands=['broadcast'])
 def broadcast_cmd(message):
@@ -219,11 +248,6 @@ def callback_handler(call):
             "desc": "BAAP BETI VVIP SPECIAL PACK",
             "media": ["videos/video8.mp4", "videos/video2.mp4", "videos/video3.mp4"]
         },
-        "p9": {
-            "name": "PLAN 9 PACK", "price": "111", "validity": "60 Days",
-            "desc": "SUPER VIP ACCESS PACK",
-            "media": ["videos/video9.mp4", "videos/video1.mp4", "videos/video2.mp4"]
-        },
         "p10": {
             "name": "VVIP PLAN 1 LAKH VIDEO", "price": "277", "validity": "365 Days",
             "desc": "PERMANENT VVIP GROUP YOU WILL GET 10 GROUP LINKS ALL VIRAL AND PREMIUM GROUP WORTH IT JUST BUY 🥵💦",
@@ -255,12 +279,7 @@ def callback_handler(call):
 
     elif data == "back":
         user_name = call.from_user.first_name
-        welcome_text = f"👋 Hello, **{user_name}**!\n\nChoose a plan from below to get started:"
-        if os.path.exists("videos/video1.mp4"):
-            with open("videos/video1.mp4", "rb") as vid:
-                bot.send_video(chat_id, vid, caption=welcome_text, supports_streaming=True, reply_markup=get_main_keyboard())
-        else:
-            bot.send_message(chat_id, welcome_text, reply_markup=get_main_keyboard())
+        send_start_sequence(chat_id, user_name)
 
 def process_user_complaint(message):
     user_id = message.from_user.id
@@ -283,19 +302,17 @@ def process_user_complaint(message):
         bot.send_message(message.chat.id, "⚠️ Complaint error. Direct Admin se contact karein.", reply_markup=get_product_buy_keyboard())
 
 # ---------------------------------------------------------
-# SAFE BOT STARTUP & RECONNECT LOOP
+# BOT STARTUP & RECONNECT LOOP
 # ---------------------------------------------------------
 if __name__ == '__main__':
     keep_alive()
     
-    # Safe Reset Webhook & Clear Pending Updates
     try:
         bot.delete_webhook(drop_pending_updates=True)
         time.sleep(1)
     except Exception as e:
         logging.warning(f"Could not clear webhooks: {e}")
 
-    # Auto Reconnect Polling Loop
     while True:
         try:
             bot.polling(non_stop=True, interval=0, timeout=20)
