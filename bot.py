@@ -43,12 +43,12 @@ def keep_alive():
 # ---------------------------------------------------------
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8618601267:AAFs9jI9kIVK13vQGgrv5egFm-XjNSQBqFc")
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "kushal_owner")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "123456789"))
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "6632236983"))
 
-MY_UPI_ID = os.environ.get("MY_UPI_ID", "kushal@upi")
-MY_UPI_NAME = os.environ.get("MY_UPI_NAME", "Viral MMS Store")
-
-bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
+48 MY_UPI_ID = os.environ.get("MY_UPI_ID", "paytm.s20glin@pty")
+49 MY_UPI_NAME = os.environ.get("MY_UPI_NAME", "Viral MMS Store")
+50 MY_QR_IMAGE = "https://i.ibb.co/Mk2DmrYd/image.jpg"
+51 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
 users_list = set()
 pending_verifications = {}
 
