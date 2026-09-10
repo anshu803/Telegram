@@ -41,11 +41,11 @@ def keep_alive():
 # ---------------------------------------------------------
 # BOT & CONFIGURATION
 # ---------------------------------------------------------
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8633128958:AAHdigNlegix2IUUHEqOEvQl-7RN7bSXCc8")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8965215390:AAE6lOqvzV4dGjlNTYgxwAVVFP9MsFzeSmo")
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "kushal_owner")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "8950719875"))
 
-MY_UPI_ID = os.environ.get("MY_UPI_ID", "paytm.s2spqnl@pty")
+MY_UPI_ID = os.environ.get("MY_UPI_ID", "paytmqr5nnug9@ptys")
 MY_UPI_NAME = os.environ.get("MY_UPI_NAME", "Viral MMS Store")
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="Markdown")
